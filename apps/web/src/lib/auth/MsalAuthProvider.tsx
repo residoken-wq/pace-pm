@@ -3,15 +3,27 @@
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { AuthContext, AuthContextType } from "./AuthProvider";
 
-// This component dynamically imports MSAL inside useEffect to avoid SSR issues
+// Force Node.js runtime instead of Edge
+export const runtime = "nodejs";
+
+// Check if we're in a proper browser environment with crypto
+const isBrowserWithCrypto = () => {
+    return (
+        typeof window !== "undefined" &&
+        typeof window.crypto !== "undefined" &&
+        typeof window.crypto.getRandomValues === "function"
+    );
+};
+
 export function MsalAuthProvider({ children }: { children: ReactNode }) {
     const [account, setAccount] = useState<{ name?: string; username?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [msalInstance, setMsalInstance] = useState<any>(null);
 
     useEffect(() => {
-        // Only run in browser
-        if (typeof window === "undefined") {
+        // Skip if not in browser with crypto support
+        if (!isBrowserWithCrypto()) {
+            console.log("Skipping MSAL init - not in browser with crypto");
             setIsLoading(false);
             return;
         }
@@ -20,11 +32,11 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
 
         const initMsal = async () => {
             try {
-                // Dynamic import MSAL inside useEffect
-                const msalModule = await import("@azure/msal-browser");
-                const configModule = await import("./msalConfig");
+                // Dynamic import MSAL
+                const { PublicClientApplication } = await import("@azure/msal-browser");
+                const { msalConfig } = await import("./msalConfig");
 
-                const instance = new msalModule.PublicClientApplication(configModule.msalConfig);
+                const instance = new PublicClientApplication(msalConfig);
                 await instance.initialize();
 
                 if (!isMounted) return;
@@ -48,16 +60,14 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
 
         initMsal();
 
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false; };
     }, []);
 
     const login = useCallback(async () => {
         if (!msalInstance) return;
         try {
-            const configModule = await import("./msalConfig");
-            await msalInstance.loginRedirect(configModule.loginRequest);
+            const { loginRequest } = await import("./msalConfig");
+            await msalInstance.loginRedirect(loginRequest);
         } catch (error) {
             console.error("Login error:", error);
         }
@@ -75,11 +85,11 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
     const getAccessToken = useCallback(async () => {
         if (!msalInstance || !account) return null;
         try {
-            const configModule = await import("./msalConfig");
+            const { loginRequest } = await import("./msalConfig");
             const accounts = msalInstance.getAllAccounts();
             if (accounts.length === 0) return null;
             const response = await msalInstance.acquireTokenSilent({
-                ...configModule.loginRequest,
+                ...loginRequest,
                 account: accounts[0],
             });
             return response.accessToken;
