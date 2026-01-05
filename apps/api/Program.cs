@@ -71,15 +71,33 @@ builder.Services.AddHealthChecks()
 var app = builder.Build();
 
 // ============================================
-// Middleware Pipeline
+// Auto-migrate database on startup
 // ============================================
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Applying database migrations...");
+        db.Database.Migrate();
+        logger.LogInformation("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error applying database migrations. Using EnsureCreated as fallback.");
+        db.Database.EnsureCreated();
+    }
 }
 
-app.UseHttpsRedirection();
+// ============================================
+// Middleware Pipeline
+// ============================================
+// Enable Swagger in all environments for API testing
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
