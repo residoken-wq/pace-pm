@@ -209,14 +209,14 @@ public class MicrosoftGraphService : IMicrosoftGraphService
     {
         try
         {
-            // Upload to OneDrive root/NexusProjectHub folder using Graph SDK v5 syntax
-            var result = await _graphClient.Users[userId].Drive.Items["root"]
+            // Upload to OneDrive using Graph SDK v5 - use DriveItem path
+            var driveItem = await _graphClient.Drives[userId].Root
                 .ItemWithPath($"NexusProjectHub/{fileName}")
                 .Content
                 .PutAsync(fileStream);
 
             _logger.LogInformation("Uploaded file {FileName} to OneDrive", fileName);
-            return result?.Id ?? "";
+            return driveItem?.Id ?? "";
         }
         catch (Exception ex)
         {
