@@ -1,22 +1,34 @@
 "use client";
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
-import { PublicClientApplication } from "@azure/msal-browser";
 import { AuthContext, AuthContextType } from "./AuthProvider";
-import { msalConfig, loginRequest } from "./msalConfig";
 
-// This component only runs on client - imported via next/dynamic with ssr:false
+// This component dynamically imports MSAL inside useEffect to avoid SSR issues
 export function MsalAuthProvider({ children }: { children: ReactNode }) {
     const [account, setAccount] = useState<{ name?: string; username?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [msal, setMsal] = useState<PublicClientApplication | null>(null);
+    const [msalInstance, setMsalInstance] = useState<any>(null);
 
     useEffect(() => {
-        const init = async () => {
+        // Only run in browser
+        if (typeof window === "undefined") {
+            setIsLoading(false);
+            return;
+        }
+
+        let isMounted = true;
+
+        const initMsal = async () => {
             try {
-                const instance = new PublicClientApplication(msalConfig);
+                // Dynamic import MSAL inside useEffect
+                const msalModule = await import("@azure/msal-browser");
+                const configModule = await import("./msalConfig");
+
+                const instance = new msalModule.PublicClientApplication(configModule.msalConfig);
                 await instance.initialize();
-                setMsal(instance);
+
+                if (!isMounted) return;
+                setMsalInstance(instance);
 
                 const response = await instance.handleRedirectPromise();
                 if (response?.account) {
@@ -30,38 +42,44 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
             } catch (error) {
                 console.error("MSAL init error:", error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
 
-        init();
+        initMsal();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const login = useCallback(async () => {
-        if (!msal) return;
+        if (!msalInstance) return;
         try {
-            await msal.loginRedirect(loginRequest);
+            const configModule = await import("./msalConfig");
+            await msalInstance.loginRedirect(configModule.loginRequest);
         } catch (error) {
             console.error("Login error:", error);
         }
-    }, [msal]);
+    }, [msalInstance]);
 
     const logout = useCallback(async () => {
-        if (!msal) return;
+        if (!msalInstance) return;
         try {
-            await msal.logoutRedirect();
+            await msalInstance.logoutRedirect();
         } catch (error) {
             console.error("Logout error:", error);
         }
-    }, [msal]);
+    }, [msalInstance]);
 
     const getAccessToken = useCallback(async () => {
-        if (!msal || !account) return null;
+        if (!msalInstance || !account) return null;
         try {
-            const accounts = msal.getAllAccounts();
+            const configModule = await import("./msalConfig");
+            const accounts = msalInstance.getAllAccounts();
             if (accounts.length === 0) return null;
-            const response = await msal.acquireTokenSilent({
-                ...loginRequest,
+            const response = await msalInstance.acquireTokenSilent({
+                ...configModule.loginRequest,
                 account: accounts[0],
             });
             return response.accessToken;
@@ -69,7 +87,7 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
             console.error("Token error:", error);
             return null;
         }
-    }, [msal, account]);
+    }, [msalInstance, account]);
 
     const value: AuthContextType = {
         account,
