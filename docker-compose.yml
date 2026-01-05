@@ -7,9 +7,9 @@ services:
     container_name: nexus-proxy
     restart: unless-stopped
     ports:
-      - '80:80'     # HTTP
-      - '443:443'   # HTTPS
-      - '81:81'     # Admin UI
+      - '80:80' # HTTP
+      - '443:443' # HTTPS
+      - '81:81' # Admin UI
     environment:
       DB_SQLITE_FILE: "/data/database.sqlite"
     volumes:
@@ -18,7 +18,7 @@ services:
     networks:
       - nexus-network
     healthcheck:
-      test: ["CMD", "/bin/check-health"]
+      test: [ "CMD", "/bin/check-health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,7 +40,7 @@ services:
     networks:
       - nexus-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus_project_hub}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,7 +58,7 @@ services:
     networks:
       - nexus-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-redis_secret_2026}", "ping"]
+      test: [ "CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-redis_secret_2026}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -81,7 +81,7 @@ services:
     depends_on:
       - postgres
     profiles:
-      - tools  # Only starts with: docker compose --profile tools up
+      - tools # Only starts with: docker compose --profile tools up
 
 # ===========================================
 # NETWORKS
