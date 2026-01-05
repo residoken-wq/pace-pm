@@ -1,147 +1,136 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import type { PublicClientApplication, AccountInfo } from "@azure/msal-browser";
-import { msalConfig, loginRequest, graphScopes } from "./msalConfig";
 
 // Types
 interface AuthContextType {
-    account: AccountInfo | null;
+    account: { name?: string; username?: string } | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     login: () => Promise<void>;
     logout: () => Promise<void>;
     getAccessToken: () => Promise<string | null>;
-    getGraphToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Auth Provider Component
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
-    const [account, setAccount] = useState<AccountInfo | null>(null);
+// Empty auth context for SSR
+const defaultAuth: AuthContextType = {
+    account: null,
+    isAuthenticated: false,
+    isLoading: true,
+    login: async () => { },
+    logout: async () => { },
+    getAccessToken: async () => null,
+};
+
+// Client-only Auth Provider
+function ClientAuthProvider({ children }: { children: ReactNode }) {
+    const [account, setAccount] = useState<{ name?: string; username?: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [msal, setMsal] = useState<any>(null);
 
-    // Initialize MSAL only on client side
     useEffect(() => {
-        const initMsal = async () => {
-            // Only run in browser
-            if (typeof window === "undefined") {
-                setIsLoading(false);
-                return;
-            }
+        let isMounted = true;
 
+        const init = async () => {
             try {
-                // Dynamic import to avoid SSR issues
                 const { PublicClientApplication } = await import("@azure/msal-browser");
+                const { msalConfig } = await import("./msalConfig");
 
-                const msal = new PublicClientApplication(msalConfig);
-                await msal.initialize();
+                const instance = new PublicClientApplication(msalConfig);
+                await instance.initialize();
 
-                setMsalInstance(msal);
+                if (!isMounted) return;
+                setMsal(instance);
 
-                // Handle redirect response
-                const response = await msal.handleRedirectPromise();
+                const response = await instance.handleRedirectPromise();
                 if (response?.account) {
-                    setAccount(response.account);
+                    setAccount({ name: response.account.name, username: response.account.username });
                 } else {
-                    // Check for existing accounts
-                    const accounts = msal.getAllAccounts();
+                    const accounts = instance.getAllAccounts();
                     if (accounts.length > 0) {
-                        setAccount(accounts[0]);
+                        setAccount({ name: accounts[0].name, username: accounts[0].username });
                     }
                 }
             } catch (error) {
                 console.error("MSAL init error:", error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
 
-        initMsal();
+        init();
+        return () => { isMounted = false; };
     }, []);
 
     const login = useCallback(async () => {
-        if (!msalInstance) return;
-
+        if (!msal) return;
         try {
-            setIsLoading(true);
-            await msalInstance.loginRedirect(loginRequest);
+            const { loginRequest } = await import("./msalConfig");
+            await msal.loginRedirect(loginRequest);
         } catch (error) {
             console.error("Login error:", error);
-            setIsLoading(false);
         }
-    }, [msalInstance]);
+    }, [msal]);
 
     const logout = useCallback(async () => {
-        if (!msalInstance) return;
-
+        if (!msal) return;
         try {
-            await msalInstance.logoutRedirect();
+            await msal.logoutRedirect();
         } catch (error) {
             console.error("Logout error:", error);
         }
-    }, [msalInstance]);
+    }, [msal]);
 
-    const getAccessToken = useCallback(async (): Promise<string | null> => {
-        if (!msalInstance || !account) return null;
-
+    const getAccessToken = useCallback(async () => {
+        if (!msal || !account) return null;
         try {
-            const { InteractionRequiredAuthError } = await import("@azure/msal-browser");
+            const { loginRequest } = await import("./msalConfig");
+            const accounts = msal.getAllAccounts();
+            if (accounts.length === 0) return null;
 
-            const response = await msalInstance.acquireTokenSilent({
+            const response = await msal.acquireTokenSilent({
                 ...loginRequest,
-                account,
+                account: accounts[0],
             });
             return response.accessToken;
         } catch (error) {
-            const { InteractionRequiredAuthError } = await import("@azure/msal-browser");
-            if (error instanceof InteractionRequiredAuthError) {
-                await msalInstance.acquireTokenRedirect(loginRequest);
-            }
             console.error("Token error:", error);
             return null;
         }
-    }, [msalInstance, account]);
-
-    const getGraphToken = useCallback(async (): Promise<string | null> => {
-        if (!msalInstance || !account) return null;
-
-        try {
-            const response = await msalInstance.acquireTokenSilent({
-                ...graphScopes,
-                account,
-            });
-            return response.accessToken;
-        } catch (error) {
-            const { InteractionRequiredAuthError } = await import("@azure/msal-browser");
-            if (error instanceof InteractionRequiredAuthError) {
-                await msalInstance.acquireTokenRedirect(graphScopes);
-            }
-            console.error("Graph token error:", error);
-            return null;
-        }
-    }, [msalInstance, account]);
+    }, [msal, account]);
 
     return (
         <AuthContext.Provider
-            value={{
-                account,
-                isAuthenticated: !!account,
-                isLoading,
-                login,
-                logout,
-                getAccessToken,
-                getGraphToken,
-            }}
+            value={{ account, isAuthenticated: !!account, isLoading, login, logout, getAccessToken }}
         >
             {children}
         </AuthContext.Provider>
     );
 }
 
-// Hook to use auth
+// Main AuthProvider - wraps client provider
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // During SSR, provide default context
+    if (!mounted) {
+        return (
+            <AuthContext.Provider value={defaultAuth}>
+                {children}
+            </AuthContext.Provider>
+        );
+    }
+
+    return <ClientAuthProvider>{children}</ClientAuthProvider>;
+}
+
+// Hook
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {
