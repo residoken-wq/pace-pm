@@ -209,8 +209,8 @@ public class MicrosoftGraphService : IMicrosoftGraphService
     {
         try
         {
-            // Upload to OneDrive root/NexusProjectHub folder
-            var result = await _graphClient.Users[userId].Drive.Root
+            // Upload to OneDrive root/NexusProjectHub folder using Graph SDK v5 syntax
+            var result = await _graphClient.Users[userId].Drive.Items["root"]
                 .ItemWithPath($"NexusProjectHub/{fileName}")
                 .Content
                 .PutAsync(fileStream);
