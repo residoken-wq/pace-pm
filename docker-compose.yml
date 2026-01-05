@@ -83,6 +83,35 @@ services:
     profiles:
       - tools # Only starts with: docker compose --profile tools up
 
+  # ===========================================
+  # .NET 8 API
+  # ===========================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: nexus-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=nexus_project_hub;Username=nexus;Password=${POSTGRES_PASSWORD:-nexus_secret_2026}"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD:-redis_secret_2026}"
+      Frontend__Url: "http://localhost:3300"
+    ports:
+      - "5000:5000"
+    networks:
+      - nexus-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 # ===========================================
 # NETWORKS
 # ===========================================
