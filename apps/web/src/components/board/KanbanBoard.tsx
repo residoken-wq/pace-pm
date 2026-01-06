@@ -21,20 +21,20 @@ const reverseStatusMap: Record<ApiTaskStatus, string> = {
     Cancelled: "cancelled",
 };
 
-// Column config
+// Column config - brand accent colors
 const columns = [
-    { id: "todo", title: "To Do", color: "bg-slate-500", apiStatus: "Todo" as ApiTaskStatus },
-    { id: "in_progress", title: "In Progress", color: "bg-blue-500", apiStatus: "InProgress" as ApiTaskStatus },
-    { id: "in_review", title: "In Review", color: "bg-yellow-500", apiStatus: "InReview" as ApiTaskStatus },
-    { id: "done", title: "Done", color: "bg-green-500", apiStatus: "Done" as ApiTaskStatus },
+    { id: "todo", title: "To Do", color: "bg-gray-400", bgColor: "bg-gray-50 dark:bg-[#111d32]", apiStatus: "Todo" as ApiTaskStatus },
+    { id: "in_progress", title: "In Progress", color: "bg-[#0047af]", bgColor: "bg-blue-50/50 dark:bg-[#0047af]/10", apiStatus: "InProgress" as ApiTaskStatus },
+    { id: "in_review", title: "In Review", color: "bg-[#ffc942]", bgColor: "bg-yellow-50/50 dark:bg-[#ffc942]/10", apiStatus: "InReview" as ApiTaskStatus },
+    { id: "done", title: "Done", color: "bg-[#10b981]", bgColor: "bg-green-50/50 dark:bg-green-900/10", apiStatus: "Done" as ApiTaskStatus },
 ];
 
-// Priority badge colors
+// Priority badge colors - brand aligned
 const priorityColors: Record<ApiPriority, string> = {
-    Low: "bg-slate-100 text-slate-700",
-    Medium: "bg-blue-100 text-blue-700",
-    High: "bg-orange-100 text-orange-700",
-    Urgent: "bg-red-100 text-red-700",
+    Low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+    Medium: "bg-[#59cbe8]/20 text-[#0047af] dark:bg-[#59cbe8]/10 dark:text-[#59cbe8]",
+    High: "bg-[#ffc942]/20 text-[#f99a18] dark:bg-[#ffc942]/10 dark:text-[#ffc942]",
+    Urgent: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
 };
 
 interface TaskCardProps {
@@ -49,29 +49,29 @@ function TaskCard({ task, onDragStart, onClick }: TaskCardProps) {
             draggable
             onDragStart={(e) => onDragStart(e, task)}
             onClick={() => onClick(task)}
-            className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-[#1a2744] rounded-xl p-3.5 shadow-sm border border-gray-200 dark:border-[#2a4066] cursor-grab active:cursor-grabbing hover:shadow-md hover:border-[#59cbe8]/50 transition-all"
         >
             <div className="flex items-start gap-2">
-                <GripVertical className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                    <p className="font-medium text-sm text-gray-900 dark:text-white">
                         {task.title}
                     </p>
                     {task.description && (
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{task.description}</p>
+                        <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{task.description}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColors[task.priority]}`}>
+                    <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[task.priority]}`}>
                             {task.priority}
                         </span>
                         {task.dueDate && (
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {new Date(task.dueDate).toLocaleDateString()}
                             </span>
                         )}
                         {task.assignee && (
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
                                 <User className="w-3 h-3" />
                                 {task.assignee.displayName}
                             </span>
@@ -80,12 +80,12 @@ function TaskCard({ task, onDragStart, onClick }: TaskCardProps) {
                 </div>
                 <button
                     onClick={(e) => { e.stopPropagation(); }}
-                    className="text-slate-400 hover:text-slate-600"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a4066] transition-colors"
                 >
                     <MoreHorizontal className="w-4 h-4" />
                 </button>
             </div>
-        </div >
+        </div>
     );
 }
 
@@ -102,26 +102,26 @@ interface KanbanColumnProps {
 function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTask, onTaskClick }: KanbanColumnProps) {
     return (
         <div
-            className="flex-shrink-0 w-72"
+            className="flex-shrink-0 w-80"
             onDragOver={onDragOver}
             onDrop={(e) => onDrop(e, column.apiStatus)}
         >
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                    <h3 className="font-semibold text-slate-700 dark:text-slate-200">{column.title}</h3>
-                    <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+            <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2.5">
+                    <div className={`w-3 h-3 rounded-full ${column.color} shadow-sm`} />
+                    <h3 className="font-semibold text-gray-800 dark:text-gray-200">{column.title}</h3>
+                    <span className="text-xs text-gray-500 bg-gray-100 dark:bg-[#1a2744] px-2.5 py-0.5 rounded-full font-medium">
                         {tasks.length}
                     </span>
                 </div>
                 <button
                     onClick={() => onAddTask(column.apiStatus)}
-                    className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                    className="text-gray-400 hover:text-[#0047af] p-1.5 hover:bg-[#0047af]/10 rounded-lg transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                 </button>
             </div>
-            <div className="space-y-2 min-h-[200px] bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2">
+            <div className={`space-y-2.5 min-h-[250px] ${column.bgColor} rounded-xl p-3 border border-gray-200/50 dark:border-[#1e3050]`}>
                 {tasks.map((task) => (
                     <TaskCard
                         key={task.id}
@@ -131,8 +131,11 @@ function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTas
                     />
                 ))}
                 {tasks.length === 0 && (
-                    <div className="text-center py-8 text-slate-400 text-sm">
-                        Drop tasks here
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a2744] flex items-center justify-center mb-2">
+                            <Plus className="w-5 h-5" />
+                        </div>
+                        <p className="text-sm">Drop tasks here</p>
                     </div>
                 )}
             </div>
