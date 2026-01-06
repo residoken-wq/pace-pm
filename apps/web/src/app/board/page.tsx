@@ -80,8 +80,8 @@ export default function BoardPage() {
                                 key={project.id}
                                 onClick={() => setActiveProject(project)}
                                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${activeProject.id === project.id
-                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                                     }`}
                             >
                                 <div className={`w-2 h-2 rounded-full ${project.color}`} />
@@ -180,7 +180,7 @@ export default function BoardPage() {
 
                 {/* Kanban Board */}
                 <div className="flex-1 overflow-auto p-6">
-                    <KanbanBoard />
+                    <KanbanBoard projectId={activeProject.id} />
                 </div>
             </main>
         </div>
