@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/lib/auth";
 import { KanbanBoard } from "@/components/board";
-import { Button, Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
+import { Button, Card, CardHeader, CardTitle, CardContent, Input } from "@/components/ui";
+import { useProjects, Project, useApiAuth, api } from "@/lib/api";
 import {
     Folder,
     Plus,
@@ -13,27 +14,163 @@ import {
     LogOut,
     ChevronDown,
     Search,
-    Bell
+    Bell,
+    X,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 
-// Sample projects
-const projects = [
-    { id: "1", name: "Nexus Project Hub", color: "bg-blue-500", tasksCount: 12 },
-    { id: "2", name: "SOC Dashboard", color: "bg-green-500", tasksCount: 8 },
-    { id: "3", name: "Mini Shop App", color: "bg-purple-500", tasksCount: 5 },
+// Default workspace ID (in real app, this would come from user selection)
+const DEFAULT_WORKSPACE_ID = "default";
+
+// Project colors
+const projectColors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-purple-500",
+    "bg-orange-500",
+    "bg-pink-500",
+    "bg-cyan-500",
 ];
 
-export default function BoardPage() {
-    const { account, logout, isLoading } = useAuth();
-    const [activeProject, setActiveProject] = useState(projects[0]);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+interface ProjectModalProps {
+    isOpen: boolean;
+    project?: Project | null;
+    onClose: () => void;
+    onSave: (project: Partial<Project>) => void;
+}
 
-    if (isLoading) {
+function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
+    const [name, setName] = useState(project?.name || "");
+    const [description, setDescription] = useState(project?.description || "");
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (project) {
+            setName(project.name);
+            setDescription(project.description || "");
+        } else {
+            setName("");
+            setDescription("");
+        }
+    }, [project]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            await onSave({
+                ...(project ? { id: project.id } : {}),
+                name,
+                description,
+                status: project?.status || "Planning",
+            });
+            onClose();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h2 className="text-lg font-semibold">{project ? "Edit Project" : "New Project"}</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Project Name *
+                        </label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter project name..."
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Description
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Project description..."
+                            rows={3}
+                            className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-3 py-2 text-sm"
+                        />
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                            Cancel
+                        </Button>
+                        <Button type="submit" className="flex-1" disabled={saving || !name.trim()}>
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (project ? "Update" : "Create")}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+export default function BoardPage() {
+    const { account, logout, isLoading: authLoading } = useAuth();
+    const { projects, loading: projectsLoading, createProject, updateProject } = useProjects(DEFAULT_WORKSPACE_ID);
+
+    const [activeProject, setActiveProject] = useState<Project | null>(null);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [projectModalOpen, setProjectModalOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [taskModalTrigger, setTaskModalTrigger] = useState(0);
+
+    // Set first project as active when projects load
+    useEffect(() => {
+        if (projects.length > 0 && !activeProject) {
+            setActiveProject(projects[0]);
+        }
+    }, [projects, activeProject]);
+
+    // Initialize API auth
+    useApiAuth();
+
+    const handleCreateProject = useCallback(() => {
+        setEditingProject(null);
+        setProjectModalOpen(true);
+    }, []);
+
+    const handleNewTask = useCallback(() => {
+        // Trigger KanbanBoard to open task modal
+        setTaskModalTrigger(prev => prev + 1);
+    }, []);
+
+    const handleSaveProject = useCallback(async (projectData: Partial<Project>) => {
+        try {
+            if (projectData.id) {
+                await updateProject(projectData.id, projectData);
+            } else {
+                const created = await createProject(projectData);
+                setActiveProject(created);
+            }
+        } catch (err) {
+            console.error("Failed to save project:", err);
+        }
+    }, [createProject, updateProject]);
+
+    if (authLoading) {
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
         );
     }
@@ -61,12 +198,12 @@ export default function BoardPage() {
             <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col`}>
                 {/* Logo */}
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                             <span className="text-white font-bold text-sm">N</span>
                         </div>
                         {sidebarOpen && <span className="font-semibold text-slate-800 dark:text-white">Nexus</span>}
-                    </div>
+                    </Link>
                 </div>
 
                 {/* Projects */}
@@ -74,29 +211,44 @@ export default function BoardPage() {
                     {sidebarOpen && (
                         <div className="text-xs font-medium text-slate-500 uppercase mb-2">Projects</div>
                     )}
-                    <div className="space-y-1">
-                        {projects.map((project) => (
-                            <button
-                                key={project.id}
-                                onClick={() => setActiveProject(project)}
-                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${activeProject.id === project.id
-                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                                    }`}
-                            >
-                                <div className={`w-2 h-2 rounded-full ${project.color}`} />
-                                {sidebarOpen && (
-                                    <>
-                                        <span className="flex-1 text-left truncate">{project.name}</span>
-                                        <span className="text-xs text-slate-400">{project.tasksCount}</span>
-                                    </>
-                                )}
-                            </button>
-                        ))}
-                    </div>
+
+                    {projectsLoading ? (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                        </div>
+                    ) : (
+                        <div className="space-y-1">
+                            {projects.map((project, index) => (
+                                <button
+                                    key={project.id}
+                                    onClick={() => setActiveProject(project)}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${activeProject?.id === project.id
+                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                        }`}
+                                >
+                                    <div className={`w-2 h-2 rounded-full ${projectColors[index % projectColors.length]}`} />
+                                    {sidebarOpen && (
+                                        <>
+                                            <span className="flex-1 text-left truncate">{project.name}</span>
+                                        </>
+                                    )}
+                                </button>
+                            ))}
+
+                            {projects.length === 0 && sidebarOpen && (
+                                <p className="text-sm text-slate-400 text-center py-4">
+                                    No projects yet
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {sidebarOpen && (
-                        <button className="w-full flex items-center gap-2 px-3 py-2 mt-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+                        <button
+                            onClick={handleCreateProject}
+                            className="w-full flex items-center gap-2 px-3 py-2 mt-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        >
                             <Plus className="w-4 h-4" />
                             <span>New Project</span>
                         </button>
@@ -133,11 +285,15 @@ export default function BoardPage() {
                         >
                             <LayoutGrid className="w-5 h-5" />
                         </button>
-                        <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${activeProject.color}`} />
-                            <h1 className="font-semibold text-slate-800 dark:text-white">{activeProject.name}</h1>
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
-                        </div>
+                        {activeProject ? (
+                            <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${projectColors[projects.indexOf(activeProject) % projectColors.length]}`} />
+                                <h1 className="font-semibold text-slate-800 dark:text-white">{activeProject.name}</h1>
+                                <ChevronDown className="w-4 h-4 text-slate-400" />
+                            </div>
+                        ) : (
+                            <h1 className="font-semibold text-slate-800 dark:text-white">Select a Project</h1>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -153,7 +309,12 @@ export default function BoardPage() {
                             <Bell className="w-5 h-5" />
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
                         </button>
-                        <Button size="sm" className="gap-1">
+                        <Button
+                            size="sm"
+                            className="gap-1"
+                            onClick={handleNewTask}
+                            disabled={!activeProject}
+                        >
                             <Plus className="w-4 h-4" />
                             New Task
                         </Button>
@@ -180,9 +341,29 @@ export default function BoardPage() {
 
                 {/* Kanban Board */}
                 <div className="flex-1 overflow-auto p-6">
-                    <KanbanBoard projectId={activeProject.id} />
+                    {activeProject ? (
+                        <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                            <Folder className="w-16 h-16 mb-4" />
+                            <p className="text-lg font-medium">No project selected</p>
+                            <p className="text-sm">Create a new project or select one from the sidebar</p>
+                            <Button onClick={handleCreateProject} className="mt-4 gap-2">
+                                <Plus className="w-4 h-4" />
+                                Create Project
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </main>
+
+            {/* Project Modal */}
+            <ProjectModal
+                isOpen={projectModalOpen}
+                project={editingProject}
+                onClose={() => setProjectModalOpen(false)}
+                onSave={handleSaveProject}
+            />
         </div>
     );
 }

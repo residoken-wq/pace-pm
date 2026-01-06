@@ -252,15 +252,25 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave }: TaskModalPr
 
 interface KanbanBoardProps {
     projectId: string;
+    openModalTrigger?: number;
 }
 
-export function KanbanBoard({ projectId }: KanbanBoardProps) {
+export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
     const { tasksByStatus, loading, error, createTask, updateTask, updateStatus } = useTasksByStatus(projectId);
 
     const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
     const [defaultStatus, setDefaultStatus] = useState<ApiTaskStatus>("Todo");
+
+    // Open modal when trigger changes (from parent)
+    useEffect(() => {
+        if (openModalTrigger && openModalTrigger > 0) {
+            setSelectedTask(null);
+            setDefaultStatus("Todo");
+            setModalOpen(true);
+        }
+    }, [openModalTrigger]);
 
     const handleDragStart = useCallback((e: React.DragEvent, task: ProjectTask) => {
         setDraggedTask(task);
