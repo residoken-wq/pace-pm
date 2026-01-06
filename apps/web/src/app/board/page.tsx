@@ -24,14 +24,14 @@ import { useState, useCallback, useEffect } from "react";
 // Default workspace ID (in real app, this would come from user selection)
 const DEFAULT_WORKSPACE_ID = "default";
 
-// Project colors
+// Project colors - brand-aligned palette
 const projectColors = [
-    "bg-blue-500",
-    "bg-green-500",
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-pink-500",
-    "bg-cyan-500",
+    "bg-[#0047af]",
+    "bg-[#0066cc]",
+    "bg-[#2d7dd2]",
+    "bg-[#0052cc]",
+    "bg-[#1e3a8a]",
+    "bg-[#3b82f6]",
 ];
 
 interface ProjectModalProps {
@@ -75,14 +75,14 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
             <div
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4"
+                className="bg-white dark:bg-[#0d1526] rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-slate-200 dark:border-[#1e3a5f]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-                    <h2 className="text-lg font-semibold">{project ? "Edit Project" : "New Project"}</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#1e3a5f]">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{project ? "Edit Project" : "New Project"}</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -193,13 +193,13 @@ export default function BoardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
+        <div className="min-h-screen bg-slate-100 dark:bg-[#060d18] flex">
             {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 flex flex-col`}>
+            <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white dark:bg-[#0a1628] border-r border-slate-200 dark:border-[#1e3a5f] transition-all duration-300 flex flex-col`}>
                 {/* Logo */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="p-4 border-b border-slate-200 dark:border-[#1e3a5f]">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0047af] to-[#0066cc] flex items-center justify-center shadow-lg shadow-[#0047af]/30">
                             <span className="text-white font-bold text-sm">N</span>
                         </div>
                         {sidebarOpen && <span className="font-semibold text-slate-800 dark:text-white">Nexus</span>}
@@ -256,18 +256,18 @@ export default function BoardPage() {
                 </div>
 
                 {/* User */}
-                <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                <div className="p-3 border-t border-slate-200 dark:border-[#1e3a5f]">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0047af] to-[#0066cc] flex items-center justify-center text-white text-sm font-medium shadow-lg shadow-[#0047af]/20">
                             {account.name?.charAt(0) || 'U'}
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{account.name}</p>
-                                <p className="text-xs text-slate-500 truncate">{account.username}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{account.username}</p>
                             </div>
                         )}
-                        <button onClick={logout} className="text-slate-400 hover:text-red-500">
+                        <button onClick={logout} className="text-slate-400 hover:text-red-500 transition-colors">
                             <LogOut className="w-4 h-4" />
                         </button>
                     </div>
@@ -277,7 +277,7 @@ export default function BoardPage() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <header className="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
+                <header className="h-14 bg-white dark:bg-[#0a1628] border-b border-slate-200 dark:border-[#1e3a5f] flex items-center justify-between px-4">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -322,25 +322,25 @@ export default function BoardPage() {
                 </header>
 
                 {/* Board Tabs */}
-                <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4">
+                <div className="bg-white dark:bg-[#0a1628] border-b border-slate-200 dark:border-[#1e3a5f] px-4">
                     <div className="flex gap-4">
-                        <button className="py-3 px-1 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                        <button className="py-3 px-1 text-sm font-medium text-[#0047af] dark:text-[#3b82f6] border-b-2 border-[#0047af] dark:border-[#3b82f6]">
                             Board
                         </button>
-                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700">
+                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors">
                             Timeline
                         </button>
-                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700">
+                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors">
                             Table
                         </button>
-                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700">
+                        <button className="py-3 px-1 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors">
                             Calendar
                         </button>
                     </div>
                 </div>
 
                 {/* Kanban Board */}
-                <div className="flex-1 overflow-auto p-6">
+                <div className="flex-1 overflow-auto p-6 bg-slate-50 dark:bg-[#060d18]">
                     {activeProject ? (
                         <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
                     ) : (

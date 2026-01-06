@@ -2,98 +2,119 @@
 
 /* ============================================
    Nexus Project Hub - Design System
+   Brand Color: Pantone 293 (#0047af)
    ============================================ */
 
 :root {
+  /* Brand color: #0047af = HSL(216, 100%, 34%) */
+  --brand: 216 100% 34%;
+  --brand-light: 216 100% 45%;
+  --brand-dark: 216 100% 25%;
+
   /* Background colors */
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  
+  --foreground: 220 20% 10%;
+
   /* Card */
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  
+  --card-foreground: 220 20% 10%;
+
   /* Popover */
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  
-  /* Primary - Blue accent */
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  
+  --popover-foreground: 220 20% 10%;
+
+  /* Primary - Brand Blue */
+  --primary: 216 100% 34%;
+  --primary-foreground: 0 0% 100%;
+
   /* Secondary */
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 20% 10%;
+
   /* Muted */
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 10% 46%;
+
   /* Accent */
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  
+  --accent: 216 100% 96%;
+  --accent-foreground: 216 100% 34%;
+
   /* Destructive */
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Success */
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning */
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
   /* Border & Input */
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 216 100% 34%;
+
   /* Border radius */
-  --radius: 0.5rem;
-  
+  --radius: 0.625rem;
+
   /* Sidebar */
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-background: 220 20% 98%;
+  --sidebar-foreground: 220 20% 25%;
+  --sidebar-primary: 216 100% 34%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 216 100% 96%;
+  --sidebar-accent-foreground: 216 100% 34%;
   --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --sidebar-ring: 216 100% 34%;
 }
 
-/* Dark mode */
+/* Dark mode - Premium dark theme */
 .dark {
-  --background: 222.2 84% 4.9%;
+  --background: 222 47% 6%;
   --foreground: 210 40% 98%;
-  
-  --card: 222.2 84% 4.9%;
+
+  --card: 222 47% 8%;
   --card-foreground: 210 40% 98%;
-  
-  --popover: 222.2 84% 4.9%;
+
+  --popover: 222 47% 8%;
   --popover-foreground: 210 40% 98%;
-  
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  
-  --secondary: 217.2 32.6% 17.5%;
+
+  /* Primary - Brand Blue (brighter in dark mode) */
+  --primary: 216 100% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 222 47% 12%;
   --secondary-foreground: 210 40% 98%;
-  
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
-  
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
+
+  --muted: 222 47% 12%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 216 100% 15%;
+  --accent-foreground: 216 100% 70%;
+
+  --destructive: 0 63% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 76% 40%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 0%;
+
+  --border: 222 47% 15%;
+  --input: 222 47% 15%;
+  --ring: 216 100% 50%;
+
+  --sidebar-background: 222 47% 5%;
+  --sidebar-foreground: 210 40% 90%;
+  --sidebar-primary: 216 100% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --sidebar-accent: 216 100% 12%;
+  --sidebar-accent-foreground: 216 100% 70%;
+  --sidebar-border: 222 47% 12%;
+  --sidebar-ring: 216 100% 50%;
 }
 
 @theme inline {
@@ -116,6 +137,10 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-brand: hsl(var(--brand));
+  --color-brand-light: hsl(var(--brand-light));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -132,15 +157,63 @@ body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Smooth transitions */
 * {
-  @apply transition-colors duration-200;
+  @apply transition-colors duration-150;
 }
 
-/* Focus ring */
+/* Focus ring - brand color */
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Selection color */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
+}
+
+/* Gradient utilities */
+.gradient-brand {
+  background: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(var(--brand-light)) 100%);
+}
+
+.gradient-brand-dark {
+  background: linear-gradient(135deg, hsl(var(--brand-dark)) 0%, hsl(var(--brand)) 100%);
+}
+
+/* Glass effect */
+.glass {
+  background: hsl(var(--background) / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5;
 }
