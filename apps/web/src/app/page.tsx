@@ -51,29 +51,33 @@ export default function Home() {
 
           {/* Quick Actions */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
-                  <Folder className="w-6 h-6 text-blue-400" />
-                </div>
-                <CardTitle className="text-white">Projects</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Xem và quản lý dự án của bạn
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <Link href="/board">
+              <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
+                    <Folder className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <CardTitle className="text-white">Projects</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Xem và quản lý dự án của bạn
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
 
-            <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-                  <CheckCircle className="w-6 h-6 text-purple-400" />
-                </div>
-                <CardTitle className="text-white">My Tasks</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Công việc được giao cho bạn
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <Link href="/board">
+              <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
+                    <CheckCircle className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <CardTitle className="text-white">My Tasks</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Công việc được giao cho bạn
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
 
             <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
               <CardHeader>
