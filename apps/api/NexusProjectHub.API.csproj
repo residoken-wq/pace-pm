@@ -9,12 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Microsoft Graph SDK -->
-    <PackageReference Include="Microsoft.Graph" Version="5.62.0" />
+    <!-- Microsoft Graph SDK - use v5 compatible with Identity.Web -->
+    <PackageReference Include="Microsoft.Graph" Version="5.56.0" />
     
-    <!-- Authentication -->
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.8.2" />
-    <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="3.8.2" />
+    <!-- Authentication - use older compatible version -->
+    <PackageReference Include="Microsoft.Identity.Web" Version="2.21.1" />
+    <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="2.21.1" />
     
     <!-- Entity Framework Core + PostgreSQL -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
