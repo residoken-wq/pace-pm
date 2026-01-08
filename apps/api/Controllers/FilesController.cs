@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using NexusProjectHub.API.Data;
 using NexusProjectHub.API.Models;
+using NexusProjectHub.API.Services;
 
 namespace NexusProjectHub.API.Controllers;
 
