@@ -139,7 +139,7 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
                                     <button
                                         key={key}
                                         type="button"
-                                        onClick={() => setStatus(key)}
+                                        onClick={() => setStatus(key as any)}
                                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${status === key
                                             ? "bg-primary text-primary-foreground"
                                             : "bg-muted text-muted-foreground hover:bg-muted/80"
