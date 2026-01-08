@@ -79,6 +79,15 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
     .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
 
+// Configure Forwarded Headers for Nginx Proxy (Moved here to be before builder.Build())
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear(); // Allow any proxy (safe since we run in Docker internal network)
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 // ============================================
@@ -109,14 +118,7 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Configure Forwarded Headers for Nginx Proxy
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
-                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear(); // Allow any proxy (safe since we run in Docker internal network)
-    options.KnownProxies.Clear();
-});
+
 
 // ... (existing CORS)
 app.UseCors("AllowFrontend");
