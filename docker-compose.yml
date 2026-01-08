@@ -112,6 +112,32 @@ services:
       timeout: 10s
       retries: 3
 
+  # ===========================================
+  # NEXT.JS FRONTEND
+  # ===========================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: nexus-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+      API_URL: "http://api:5000/api"
+      NEXT_PUBLIC_CLIENT_ID: ${NEXT_PUBLIC_CLIENT_ID}
+      NEXT_PUBLIC_AUTHORITY: ${NEXT_PUBLIC_AUTHORITY}
+    networks:
+      - nexus-network
+    depends_on:
+      - api
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 # ===========================================
 # NETWORKS
 # ===========================================

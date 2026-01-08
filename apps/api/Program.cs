@@ -109,7 +109,20 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Configure Forwarded Headers for Nginx Proxy
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear(); // Allow any proxy (safe since we run in Docker internal network)
+    options.KnownProxies.Clear();
+});
+
+// ... (existing CORS)
 app.UseCors("AllowFrontend");
+
+// Apply Forwarded Headers middleware BEFORE Authentication
+app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 

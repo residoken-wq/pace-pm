@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   },
   // Transpile MSAL package
   transpilePackages: ["@azure/msal-browser"],
+  output: "standalone",
 };
 
 export default nextConfig;
