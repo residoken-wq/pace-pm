@@ -3,6 +3,7 @@ using Microsoft.Identity.Web;
 using Microsoft.Graph.Models;
 using NexusProjectHub.API.Data;
 using NexusProjectHub.API.Models;
+using User = NexusProjectHub.API.Models.User;
 
 namespace NexusProjectHub.API.Services;
 
