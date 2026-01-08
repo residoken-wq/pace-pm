@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web;
 using NexusProjectHub.API.Models;
 using NexusProjectHub.API.Services;
 

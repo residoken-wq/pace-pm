@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NexusProjectHub.API.Data;
 using NexusProjectHub.API.Models;
+using TaskStatus = NexusProjectHub.API.Models.TaskStatus;
 
 namespace NexusProjectHub.API.Controllers;
 

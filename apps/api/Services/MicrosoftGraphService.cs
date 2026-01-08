@@ -211,7 +211,11 @@ public class MicrosoftGraphService : IMicrosoftGraphService
         {
             // Upload to "NexusProjectHub" folder in User's OneDrive
             // Graph SDK v5: Users[id].Drive.Root.ItemWithPath("path").Content.PutAsync(stream)
-            var driveItem = await _graphClient.Users[userId].Drive.Root
+            // Note: Users[id].Drive defaults to the user's default drive. Properties like 'Root' might not be directly exposed if using an older generic request builder pattern, 
+            // but usually standard SDK matches. If 'Root' is missing, likely need explicit 'Items["root"]'.
+            // However, typically it is exposed. Let's try Items["root"] which is safer generic access if strict property missing.
+            
+            var driveItem = await _graphClient.Users[userId].Drive.Items["root"]
                 .ItemWithPath($"NexusProjectHub/{fileName}")
                 .Content
                 .PutAsync(fileStream);
@@ -230,6 +234,7 @@ public class MicrosoftGraphService : IMicrosoftGraphService
     {
         try
         {
+            // Access item by ID directly
             var stream = await _graphClient.Users[userId].Drive.Items[fileId].Content.GetAsync();
             if (stream == null)
                 throw new FileNotFoundException("File content not found in OneDrive");
@@ -249,6 +254,7 @@ public class MicrosoftGraphService : IMicrosoftGraphService
     {
         try
         {
+            // Delete item by ID
             await _graphClient.Users[userId].Drive.Items[fileId].DeleteAsync();
             _logger.LogInformation("Deleted file {FileId} from OneDrive", fileId);
         }
