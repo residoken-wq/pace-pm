@@ -11,16 +11,13 @@ namespace NexusProjectHub.API.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
-    private readonly IMicrosoftGraphService _graphService;
     private readonly ILogger<TasksController> _logger;
 
     public TasksController(
         ITaskService taskService,
-        IMicrosoftGraphService graphService,
         ILogger<TasksController> logger)
     {
         _taskService = taskService;
-        _graphService = graphService;
         _logger = logger;
     }
 
@@ -53,29 +50,13 @@ public class TasksController : ControllerBase
             Description = request.Description,
             ProjectId = request.ProjectId,
             AssigneeId = request.AssigneeId,
-            CreatorId = request.CreatorId,
+            CreatorId = request.CreatorId ?? "system",
             Priority = request.Priority,
             DueDate = request.DueDate,
             ParentId = request.ParentId
         };
 
         var created = await _taskService.CreateTaskAsync(task);
-
-        // Sync to Microsoft To-Do if assignee exists
-        if (!string.IsNullOrEmpty(request.AssigneeId))
-        {
-            try
-            {
-                var todoId = await _graphService.CreateTodoTaskAsync(request.AssigneeId, created);
-                created.TodoTaskId = todoId;
-                await _taskService.UpdateTaskAsync(created);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to sync task to Microsoft To-Do");
-            }
-        }
-
         return CreatedAtAction(nameof(GetTask), new { id = created.Id }, created);
     }
 
@@ -121,36 +102,16 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id}/sync-calendar")]
-    public async Task<ActionResult> SyncToCalendar(string id)
-    {
-        var task = await _taskService.GetTaskByIdAsync(id);
-        if (task == null)
-            return NotFound();
-
-        if (string.IsNullOrEmpty(task.AssigneeId))
-            return BadRequest("Task must have an assignee");
-
-        try
-        {
-            var eventId = await _graphService.CreateCalendarEventAsync(task.AssigneeId, task);
-            task.OutlookEventId = eventId;
-            await _taskService.UpdateTaskAsync(task);
-            return Ok(new { eventId });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to sync task to calendar");
-            return StatusCode(500, "Failed to sync to calendar");
-        }
-    }
+    // TODO: Re-enable when Microsoft Graph is configured
+    // [HttpPost("{id}/sync-calendar")]
+    // public async Task<ActionResult> SyncToCalendar(string id) { ... }
 }
 
 public record CreateTaskRequest(
     string Title,
     string? Description,
     string ProjectId,
-    string CreatorId,
+    string? CreatorId,
     string? AssigneeId,
     TaskPriority Priority = TaskPriority.Medium,
     DateTime? DueDate = null,
