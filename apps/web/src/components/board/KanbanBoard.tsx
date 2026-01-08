@@ -315,49 +315,48 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onS
                                 <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-10" />
                             </div>
                         </div>
-                    </div>
 
                         {/* Microsoft 365 Sync */}
-                {task && (
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Microsoft 365 Sync</label>
-                        <div className="flex gap-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1 gap-2"
-                                onClick={() => handleSync("calendar")}
-                                disabled={syncing !== null || !dueDate}
-                                title={!dueDate ? "Set due date to sync" : "Sync to Outlook Calendar"}
-                            >
-                                {syncing === "calendar" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-blue-500" />}
-                                Add to Calendar
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1 gap-2"
-                                onClick={() => handleSync("todo")}
-                                disabled={syncing !== null}
-                                title="Sync to Microsoft To-Do"
-                            >
-                                {syncing === "todo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded border-2 border-primary" />}
-                                Add to To-Do
+                        {task && (
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Microsoft 365 Sync</label>
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1 gap-2"
+                                        onClick={() => handleSync("calendar")}
+                                        disabled={syncing !== null || !dueDate}
+                                        title={!dueDate ? "Set due date to sync" : "Sync to Outlook Calendar"}
+                                    >
+                                        {syncing === "calendar" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-blue-500" />}
+                                        Add to Calendar
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1 gap-2"
+                                        onClick={() => handleSync("todo")}
+                                        disabled={syncing !== null}
+                                        title="Sync to Microsoft To-Do"
+                                    >
+                                        {syncing === "todo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded border-2 border-primary" />}
+                                        Add to To-Do
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-2">
+                            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
+                            <Button type="submit" className="flex-1 h-11" disabled={saving || !title.trim()}>
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : task ? "Save Changes" : "Create Task"}
                             </Button>
                         </div>
-                    </div>
+                    </form>
                 )}
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
-                    <Button type="submit" className="flex-1 h-11" disabled={saving || !title.trim()}>
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : task ? "Save Changes" : "Create Task"}
-                    </Button>
-                </div>
-            </form>
-                )}
-        </div>
+            </div>
         </div >
     );
 }
