@@ -85,11 +85,11 @@ export function MsalAuthProvider({ children }: { children: ReactNode }) {
     const getAccessToken = useCallback(async () => {
         if (!msalInstance || !account) return null;
         try {
-            const { loginRequest } = await import("./msalConfig");
+            const { apiRequest } = await import("./msalConfig");
             const accounts = msalInstance.getAllAccounts();
             if (accounts.length === 0) return null;
             const response = await msalInstance.acquireTokenSilent({
-                ...loginRequest,
+                ...apiRequest,
                 account: accounts[0],
             });
             return response.accessToken;
