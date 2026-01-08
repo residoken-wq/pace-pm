@@ -35,6 +35,17 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IMicrosoftGraphService, MicrosoftGraphService>();
 
+// File Storage Service
+var storageProvider = builder.Configuration["Storage:Provider"];
+if (storageProvider == "OneDrive")
+{
+    builder.Services.AddScoped<IFileStorageService, OneDriveStorageService>();
+}
+else
+{
+    builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+}
+
 // ============================================
 // CORS - Allow Frontend
 // ============================================

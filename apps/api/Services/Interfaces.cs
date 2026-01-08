@@ -26,4 +26,6 @@ public interface IMicrosoftGraphService
     Task<string> CreateCalendarEventAsync(string userId, Models.ProjectTask task);
     Task<string> CreateTodoTaskAsync(string userId, Models.ProjectTask task);
     Task<string> UploadToOneDriveAsync(string userId, string fileName, Stream fileStream);
+    Task<byte[]> DownloadFileFromOneDriveAsync(string userId, string fileId);
+    Task DeleteFileFromOneDriveAsync(string userId, string fileId);
 }

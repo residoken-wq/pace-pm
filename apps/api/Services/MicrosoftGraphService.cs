@@ -209,18 +209,52 @@ public class MicrosoftGraphService : IMicrosoftGraphService
     {
         try
         {
-            // Upload to OneDrive using Graph SDK v5 - use DriveItem path
-            var driveItem = await _graphClient.Drives[userId].Root
+            // Upload to "NexusProjectHub" folder in User's OneDrive
+            // Graph SDK v5: Users[id].Drive.Root.ItemWithPath("path").Content.PutAsync(stream)
+            var driveItem = await _graphClient.Users[userId].Drive.Root
                 .ItemWithPath($"NexusProjectHub/{fileName}")
                 .Content
                 .PutAsync(fileStream);
 
-            _logger.LogInformation("Uploaded file {FileName} to OneDrive", fileName);
+            _logger.LogInformation("Uploaded file {FileName} to OneDrive for user {UserId}", fileName, userId);
             return driveItem?.Id ?? "";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading file {FileName} to OneDrive", fileName);
+            throw;
+        }
+    }
+
+    public async Task<byte[]> DownloadFileFromOneDriveAsync(string userId, string fileId)
+    {
+        try
+        {
+            var stream = await _graphClient.Users[userId].Drive.Items[fileId].Content.GetAsync();
+            if (stream == null)
+                throw new FileNotFoundException("File content not found in OneDrive");
+
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            return memoryStream.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading file {FileId} from OneDrive", fileId);
+            throw;
+        }
+    }
+
+    public async Task DeleteFileFromOneDriveAsync(string userId, string fileId)
+    {
+        try
+        {
+            await _graphClient.Users[userId].Drive.Items[fileId].DeleteAsync();
+            _logger.LogInformation("Deleted file {FileId} from OneDrive", fileId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting file {FileId} from OneDrive", fileId);
             throw;
         }
     }
