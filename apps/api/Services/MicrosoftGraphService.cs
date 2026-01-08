@@ -206,6 +206,10 @@ public class MicrosoftGraphService : IMicrosoftGraphService
         }
     }
 
+    public async Task<string> UploadToOneDriveAsync(string userId, string fileName, Stream fileStream)
+    {
+        try
+        {
             // Upload to "NexusProjectHub" folder in User's OneDrive
             // Use 'Me' since we are in delegated flow and token belongs to the user
             var driveItem = await _graphClient.Me.Drive.Root
@@ -217,6 +221,13 @@ public class MicrosoftGraphService : IMicrosoftGraphService
             
             // Return explicit composed ID or just ID to be safe
             return driveItem?.Id ?? "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file {FileName} to OneDrive", fileName);
+            throw;
+        }
+    }
 
     public async Task<byte[]> DownloadFileFromOneDriveAsync(string userId, string fileId)
     {
