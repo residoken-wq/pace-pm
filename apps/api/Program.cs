@@ -1,17 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using NexusProjectHub.API.Data;
 using NexusProjectHub.API.Services;
-using Microsoft.Identity.Web;
+// using Microsoft.Identity.Web; // Temporarily disabled
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================
 // Authentication - Microsoft Entra ID
 // ============================================
-builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration, "AzureAd")
-    .EnableTokenAcquisitionToCallDownstreamApi()
-    .AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
-    .AddInMemoryTokenCaches();
+// Temporarily disabled Microsoft Graph integration due to package compatibility issues
+// TODO: Re-enable when Teams/Outlook integration is needed
+// builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration, "AzureAd")
+//     .EnableTokenAcquisitionToCallDownstreamApi()
+//     .AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
+//     .AddInMemoryTokenCaches();
 
 // ============================================
 // Database - PostgreSQL
@@ -33,7 +35,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // ============================================
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IMicrosoftGraphService, MicrosoftGraphService>();
+// builder.Services.AddScoped<IMicrosoftGraphService, MicrosoftGraphService>(); // Temporarily disabled
 
 // ============================================
 // CORS - Allow Frontend
