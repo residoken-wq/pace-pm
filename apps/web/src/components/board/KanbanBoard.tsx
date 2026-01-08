@@ -1,40 +1,48 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, Button, Input } from "@/components/ui";
-import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Flag } from "lucide-react";
+import { Button, Input } from "@/components/ui";
+import { Plus, MoreHorizontal, GripVertical, X, Calendar, User } from "lucide-react";
 import { useTasksByStatus, TaskStatus as ApiTaskStatus, TaskPriority as ApiPriority, ProjectTask } from "@/lib/api";
 
-// Map API status to UI status
-const statusMap: Record<string, ApiTaskStatus> = {
-    todo: "Todo",
-    in_progress: "InProgress",
-    in_review: "InReview",
-    done: "Done",
-};
-
-const reverseStatusMap: Record<ApiTaskStatus, string> = {
-    Todo: "todo",
-    InProgress: "in_progress",
-    InReview: "in_review",
-    Done: "done",
-    Cancelled: "cancelled",
-};
-
-// Column config - brand accent colors
+// Column configuration with semantic colors
 const columns = [
-    { id: "todo", title: "To Do", color: "bg-gray-400", bgColor: "bg-gray-50 dark:bg-[#111d32]", apiStatus: "Todo" as ApiTaskStatus },
-    { id: "in_progress", title: "In Progress", color: "bg-[#0047af]", bgColor: "bg-blue-50/50 dark:bg-[#0047af]/10", apiStatus: "InProgress" as ApiTaskStatus },
-    { id: "in_review", title: "In Review", color: "bg-[#ffc942]", bgColor: "bg-yellow-50/50 dark:bg-[#ffc942]/10", apiStatus: "InReview" as ApiTaskStatus },
-    { id: "done", title: "Done", color: "bg-[#10b981]", bgColor: "bg-green-50/50 dark:bg-green-900/10", apiStatus: "Done" as ApiTaskStatus },
+    {
+        id: "todo",
+        title: "To Do",
+        color: "bg-slate-400",
+        bgColor: "bg-muted/50",
+        apiStatus: "Todo" as ApiTaskStatus
+    },
+    {
+        id: "in_progress",
+        title: "In Progress",
+        color: "bg-blue-500",
+        bgColor: "bg-blue-50 dark:bg-blue-950/30",
+        apiStatus: "InProgress" as ApiTaskStatus
+    },
+    {
+        id: "in_review",
+        title: "In Review",
+        color: "bg-amber-500",
+        bgColor: "bg-amber-50 dark:bg-amber-950/30",
+        apiStatus: "InReview" as ApiTaskStatus
+    },
+    {
+        id: "done",
+        title: "Done",
+        color: "bg-emerald-500",
+        bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+        apiStatus: "Done" as ApiTaskStatus
+    },
 ];
 
-// Priority badge colors - brand aligned
-const priorityColors: Record<ApiPriority, string> = {
-    Low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-    Medium: "bg-[#59cbe8]/20 text-[#0047af] dark:bg-[#59cbe8]/10 dark:text-[#59cbe8]",
-    High: "bg-[#ffc942]/20 text-[#f99a18] dark:bg-[#ffc942]/10 dark:text-[#ffc942]",
-    Urgent: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+// Priority styling
+const priorityStyles: Record<ApiPriority, string> = {
+    Low: "priority-low",
+    Medium: "priority-medium",
+    High: "priority-high",
+    Urgent: "priority-urgent",
 };
 
 interface TaskCardProps {
@@ -49,29 +57,31 @@ function TaskCard({ task, onDragStart, onClick }: TaskCardProps) {
             draggable
             onDragStart={(e) => onDragStart(e, task)}
             onClick={() => onClick(task)}
-            className="bg-white dark:bg-[#1a2744] rounded-xl p-3.5 shadow-sm border border-gray-200 dark:border-[#2a4066] cursor-grab active:cursor-grabbing hover:shadow-md hover:border-[#59cbe8]/50 transition-all"
+            className="bg-card rounded-xl p-4 shadow-soft border border-border cursor-grab active:cursor-grabbing hover:shadow-soft-lg hover:border-primary/30 transition-all group"
         >
             <div className="flex items-start gap-2">
-                <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600 mt-0.5 flex-shrink-0" />
+                <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-gray-900 dark:text-white">
+                    <p className="font-medium text-sm leading-snug">
                         {task.title}
                     </p>
                     {task.description && (
-                        <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">{task.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                            {task.description}
+                        </p>
                     )}
-                    <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[task.priority]}`}>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityStyles[task.priority]}`}>
                             {task.priority}
                         </span>
                         {task.dueDate && (
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
-                                {new Date(task.dueDate).toLocaleDateString()}
+                                {new Date(task.dueDate).toLocaleDateString('vi-VN', { day: '2-digit', month: 'short' })}
                             </span>
                         )}
                         {task.assignee && (
-                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <User className="w-3 h-3" />
                                 {task.assignee.displayName}
                             </span>
@@ -80,7 +90,7 @@ function TaskCard({ task, onDragStart, onClick }: TaskCardProps) {
                 </div>
                 <button
                     onClick={(e) => { e.stopPropagation(); }}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a4066] transition-colors"
+                    className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all"
                 >
                     <MoreHorizontal className="w-4 h-4" />
                 </button>
@@ -100,28 +110,44 @@ interface KanbanColumnProps {
 }
 
 function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTask, onTaskClick }: KanbanColumnProps) {
+    const [isDragOver, setIsDragOver] = useState(false);
+
     return (
         <div
             className="flex-shrink-0 w-80"
-            onDragOver={onDragOver}
-            onDrop={(e) => onDrop(e, column.apiStatus)}
+            onDragOver={(e) => {
+                onDragOver(e);
+                setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+                onDrop(e, column.apiStatus);
+                setIsDragOver(false);
+            }}
         >
+            {/* Column Header */}
             <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2.5">
-                    <div className={`w-3 h-3 rounded-full ${column.color} shadow-sm`} />
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-200">{column.title}</h3>
-                    <span className="text-xs text-gray-500 bg-gray-100 dark:bg-[#1a2744] px-2.5 py-0.5 rounded-full font-medium">
+                    <div className={`w-3 h-3 rounded-full ${column.color}`} />
+                    <h3 className="font-semibold text-sm">{column.title}</h3>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
                         {tasks.length}
                     </span>
                 </div>
                 <button
                     onClick={() => onAddTask(column.apiStatus)}
-                    className="text-gray-400 hover:text-[#0047af] p-1.5 hover:bg-[#0047af]/10 rounded-lg transition-colors"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title={`Add task to ${column.title}`}
                 >
                     <Plus className="w-4 h-4" />
                 </button>
             </div>
-            <div className={`space-y-2.5 min-h-[250px] ${column.bgColor} rounded-xl p-3 border border-gray-200/50 dark:border-[#1e3050]`}>
+
+            {/* Column Body */}
+            <div
+                className={`space-y-3 min-h-[300px] ${column.bgColor} rounded-xl p-3 border border-border/50 transition-colors ${isDragOver ? 'border-primary/50 bg-primary/5' : ''
+                    }`}
+            >
                 {tasks.map((task) => (
                     <TaskCard
                         key={task.id}
@@ -131,8 +157,8 @@ function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTas
                     />
                 ))}
                 {tasks.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a2744] flex items-center justify-center mb-2">
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-2">
                             <Plus className="w-5 h-5" />
                         </div>
                         <p className="text-sm">Drop tasks here</p>
@@ -143,7 +169,7 @@ function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTas
     );
 }
 
-// Task Modal for creating/editing
+// Task Modal
 interface TaskModalProps {
     isOpen: boolean;
     task?: ProjectTask | null;
@@ -156,6 +182,7 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave }: TaskModalPr
     const [title, setTitle] = useState(task?.title || "");
     const [description, setDescription] = useState(task?.description || "");
     const [priority, setPriority] = useState<ApiPriority>(task?.priority || "Medium");
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (task) {
@@ -171,67 +198,71 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave }: TaskModalPr
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({
-            ...(task ? { id: task.id } : {}),
-            title,
-            description,
-            priority,
-            status: task?.status || defaultStatus || "Todo",
-        });
-        onClose();
+        setSaving(true);
+        try {
+            await onSave({
+                ...(task ? { id: task.id } : {}),
+                title,
+                description,
+                priority,
+                status: task?.status || defaultStatus || "Todo",
+            });
+            onClose();
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             <div
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4"
+                className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md border border-border overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
                     <h2 className="text-lg font-semibold">{task ? "Edit Task" : "New Task"}</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                    <button onClick={onClose} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Title
+                        <label className="block text-sm font-medium mb-2">
+                            Title <span className="text-destructive">*</span>
                         </label>
                         <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Task title..."
+                            className="h-11"
                             required
+                            autoFocus
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Description
-                        </label>
+                        <label className="block text-sm font-medium mb-2">Description</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Task description..."
                             rows={3}
-                            className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Priority
-                        </label>
+                        <label className="block text-sm font-medium mb-2">Priority</label>
                         <div className="flex gap-2">
                             {(["Low", "Medium", "High", "Urgent"] as ApiPriority[]).map((p) => (
                                 <button
                                     key={p}
                                     type="button"
                                     onClick={() => setPriority(p)}
-                                    className={`px-3 py-1 rounded-full text-sm ${priority === p
-                                        ? priorityColors[p]
-                                        : "bg-slate-100 text-slate-500"
+                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${priority === p
+                                            ? priorityStyles[p] + ' ring-2 ring-ring ring-offset-2'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                         }`}
                                 >
                                     {p}
@@ -239,12 +270,12 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave }: TaskModalPr
                             ))}
                         </div>
                     </div>
-                    <div className="flex gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                    <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
                             Cancel
                         </Button>
-                        <Button type="submit" className="flex-1">
-                            {task ? "Update" : "Create"}
+                        <Button type="submit" className="flex-1 h-11" disabled={saving || !title.trim()}>
+                            {task ? "Save Changes" : "Create Task"}
                         </Button>
                     </div>
                 </form>
@@ -324,15 +355,16 @@ export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                <div className="w-8 h-8 rounded-full border-3 border-primary border-t-transparent animate-spin" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="text-center py-8 text-red-500">
-                Error loading tasks: {error.message}
+            <div className="flex flex-col items-center justify-center h-64 text-destructive">
+                <p className="font-medium mb-1">Failed to load tasks</p>
+                <p className="text-sm text-muted-foreground">{error.message}</p>
             </div>
         );
     }
@@ -340,7 +372,7 @@ export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
     return (
         <>
             <div className="overflow-x-auto pb-4">
-                <div className="flex gap-4 min-w-max">
+                <div className="flex gap-5 min-w-max">
                     {columns.map((column) => {
                         const columnTasks = tasksByStatus[column.apiStatus as keyof typeof tasksByStatus] || [];
                         return (

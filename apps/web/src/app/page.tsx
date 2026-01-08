@@ -2,8 +2,46 @@
 
 import { useAuth } from "@/lib/auth";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui";
-import { Folder, Users, CheckCircle, BarChart3, LogOut, Loader2 } from "lucide-react";
+import { Folder, CheckCircle, BarChart3, LogOut, Loader2, ArrowRight, Moon, Sun, Zap, Shield, Users } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+
+// Theme Toggle
+function ThemeToggle() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    setIsDark(shouldBeDark);
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+    </button>
+  );
+}
 
 export default function Home() {
   const { isAuthenticated, isLoading, account, login, logout } = useAuth();
@@ -11,106 +49,154 @@ export default function Home() {
   // Loading state
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-white" />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading Nexus...</p>
+        </div>
       </main>
     );
   }
 
-  // Authenticated - show dashboard preview
+  // Authenticated - Dashboard
   if (isAuthenticated && account) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="container mx-auto px-4 py-8">
+      <main className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-6 max-w-7xl">
           {/* Header */}
-          <nav className="flex items-center justify-between mb-12">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <nav className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-soft">
                 <span className="text-white font-bold text-xl">N</span>
               </div>
-              <span className="text-white text-xl font-semibold">Nexus Project Hub</span>
+              <span className="text-xl font-semibold">Nexus Project Hub</span>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-white font-medium">{account.name}</p>
-                <p className="text-slate-400 text-sm">{account.username}</p>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <div className="h-8 w-px bg-border mx-2" />
+              <div className="text-right mr-3">
+                <p className="font-medium text-sm">{account.name}</p>
+                <p className="text-muted-foreground text-xs">{account.username}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={logout} className="text-slate-400 hover:text-white">
+              <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-destructive">
                 <LogOut className="w-5 h-5" />
               </Button>
             </div>
           </nav>
 
           {/* Welcome */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-white mb-2">
+          <div className="mb-10">
+            <h1 className="text-3xl font-bold mb-2">
               Xin chào, {account.name?.split(" ")[0]} 👋
             </h1>
-            <p className="text-slate-400">Chào mừng bạn đến với Nexus Project Hub</p>
+            <p className="text-muted-foreground">Chào mừng bạn đến với Nexus Project Hub</p>
           </div>
 
           {/* Quick Actions */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Link href="/board">
-              <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            <Link href="/board" className="group">
+              <Card className="h-full hover-lift border-border hover:border-primary/30 transition-all">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
-                    <Folder className="w-6 h-6 text-blue-400" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                    <Folder className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <CardTitle className="text-white">Projects</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="flex items-center justify-between">
+                    Projects
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </CardTitle>
+                  <CardDescription>
                     Xem và quản lý dự án của bạn
                   </CardDescription>
                 </CardHeader>
               </Card>
             </Link>
 
-            <Link href="/board">
-              <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+            <Link href="/board" className="group">
+              <Card className="h-full hover-lift border-border hover:border-primary/30 transition-all">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-                    <CheckCircle className="w-6 h-6 text-purple-400" />
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                    <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <CardTitle className="text-white">My Tasks</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="flex items-center justify-between">
+                    My Tasks
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </CardTitle>
+                  <CardDescription>
                     Công việc được giao cho bạn
                   </CardDescription>
                 </CardHeader>
               </Card>
             </Link>
 
-            <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+            <Card className="h-full border-border opacity-60">
               <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-green-400" />
+                <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                 </div>
-                <CardTitle className="text-white">Team</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Thành viên trong workspace
+                <CardTitle className="flex items-center justify-between">
+                  Team
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Soon</span>
+                </CardTitle>
+                <CardDescription>
+                  Quản lý thành viên nhóm
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-white/5 border-white/10 backdrop-blur hover:bg-white/10 cursor-pointer transition-colors">
+            <Card className="h-full border-border opacity-60">
               <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                  <BarChart3 className="w-6 h-6 text-orange-400" />
+                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+                  <BarChart3 className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
-                <CardTitle className="text-white">Reports</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Thống kê và báo cáo
+                <CardTitle className="flex items-center justify-between">
+                  Analytics
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Soon</span>
+                </CardTitle>
+                <CardDescription>
+                  Theo dõi tiến độ dự án
                 </CardDescription>
               </CardHeader>
             </Card>
           </div>
 
-          {/* Coming Soon */}
-          <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
-            <CardContent className="py-8 text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">🚀 Coming Soon</h3>
-              <p className="text-slate-400">
-                Smart Board, Gantt Chart, Teams Integration đang được phát triển...
-              </p>
+          {/* Getting Started */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle>Bắt đầu nhanh</CardTitle>
+              <CardDescription>Các bước để sử dụng Nexus hiệu quả</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-semibold text-sm">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Tạo dự án mới</h3>
+                    <p className="text-sm text-muted-foreground">Vào Board và tạo dự án đầu tiên của bạn</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-semibold text-sm">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Thêm công việc</h3>
+                    <p className="text-sm text-muted-foreground">Tạo task và kéo thả giữa các cột trạng thái</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-semibold text-sm">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Theo dõi tiến độ</h3>
+                    <p className="text-sm text-muted-foreground">Cập nhật trạng thái và hoàn thành công việc</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -118,110 +204,100 @@ export default function Home() {
     );
   }
 
-  // Not authenticated - show landing page
+  // Not authenticated - Landing Page
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
-        <nav className="flex items-center justify-between mb-16">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xl">N</span>
-            </div>
-            <span className="text-white text-xl font-semibold">Nexus Project Hub</span>
+    <main className="min-h-screen bg-background">
+      {/* Header */}
+      <nav className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-soft">
+            <span className="text-white font-bold text-xl">N</span>
           </div>
-          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10" onClick={login}>
+          <span className="text-xl font-semibold">Nexus Project Hub</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button onClick={login} className="ml-2">
             Sign In
           </Button>
-        </nav>
+        </div>
+      </nav>
 
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
-            <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              Quản lý dự án
-            </span>
-            <br />
-            thông minh hơn
-          </h1>
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            Tích hợp sâu với Microsoft 365. Đăng nhập bằng tài khoản công ty,
-            nhận thông báo qua Teams, đồng bộ lịch với Outlook.
+      {/* Hero */}
+      <section className="container mx-auto px-4 py-20 text-center max-w-4xl">
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-6">
+          <Zap className="w-4 h-4" />
+          Powered by Microsoft 365
+        </div>
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          Quản lý dự án
+          <span className="text-gradient-brand"> thông minh</span>
+          <br />cho doanh nghiệp
+        </h1>
+        <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+          Tích hợp hoàn hảo với Microsoft Teams, Outlook và SharePoint.
+          Quản lý dự án, phân công công việc và theo dõi tiến độ một cách hiệu quả.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button size="lg" onClick={login} className="h-12 px-8 text-base">
+            Đăng nhập với Microsoft
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="container mx-auto px-4 py-20 max-w-6xl">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Tính năng nổi bật</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Nexus Project Hub cung cấp đầy đủ công cụ để quản lý dự án hiệu quả
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8"
-              onClick={login}
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 21 21" fill="currentColor">
-                <path d="M0 0h10v10H0V0zm11 0h10v10H11V0zM0 11h10v10H0V11zm11 0h10v10H11V11z" />
-              </svg>
-              Đăng nhập với Microsoft
-            </Button>
-            <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10">
-              Tìm hiểu thêm
-            </Button>
-          </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-24">
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card className="border-border">
             <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
-                <Folder className="w-6 h-6 text-blue-400" />
+              <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+                <Folder className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <CardTitle className="text-white">Smart Board</CardTitle>
-              <CardDescription className="text-slate-400">
-                Kanban + Gantt Chart kết hợp, theo dõi tiến độ real-time
+              <CardTitle>Smart Board</CardTitle>
+              <CardDescription>
+                Kanban board với drag-drop, theo dõi tiến độ trực quan và phân loại công việc thông minh
               </CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
+          <Card className="border-border">
             <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-purple-400" />
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <CardTitle className="text-white">Teams Integration</CardTitle>
-              <CardDescription className="text-slate-400">
-                Nhận thông báo, tạo task trực tiếp từ Microsoft Teams
+              <CardTitle>Teams Integration</CardTitle>
+              <CardDescription>
+                Tích hợp Microsoft Teams để cộng tác, tạo cuộc họp và nhận thông báo trực tiếp
               </CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
+          <Card className="border-border">
             <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center mb-4">
-                <CheckCircle className="w-6 h-6 text-green-400" />
+              <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-violet-600 dark:text-violet-400" />
               </div>
-              <CardTitle className="text-white">Resource Management</CardTitle>
-              <CardDescription className="text-slate-400">
-                Theo dõi workload, tránh quá tải cho team
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                <BarChart3 className="w-6 h-6 text-orange-400" />
-              </div>
-              <CardTitle className="text-white">AI Insights</CardTitle>
-              <CardDescription className="text-slate-400">
-                Tóm tắt tiến độ, dự đoán rủi ro bằng Azure OpenAI
+              <CardTitle>Enterprise Security</CardTitle>
+              <CardDescription>
+                Bảo mật cấp doanh nghiệp với Azure AD, phân quyền chi tiết và audit log
               </CardDescription>
             </CardHeader>
           </Card>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 mt-24">
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-center text-slate-500">
-            © 2026 Nexus Project Hub. Powered by Microsoft 365.
-          </p>
+      <footer className="border-t border-border py-8">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>© 2026 PACE Institute of Management. Nexus Project Hub.</p>
         </div>
       </footer>
     </main>

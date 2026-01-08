@@ -14,21 +14,24 @@ import {
     Bell,
     X,
     Loader2,
-    Home
+    Home,
+    Moon,
+    Sun,
+    Settings
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect } from "react";
 
 const DEFAULT_WORKSPACE_ID = "default";
 
-// Project colors - brand accent palette
-const projectColors = [
-    "bg-[#0047af]",
-    "bg-[#59cbe8]",
-    "bg-[#ffc942]",
-    "bg-[#f99a18]",
-    "bg-[#6ce0ff]",
-    "bg-[#2885f1]",
+// Project dot colors
+const projectDotColors = [
+    "bg-blue-500",
+    "bg-emerald-500",
+    "bg-violet-500",
+    "bg-amber-500",
+    "bg-rose-500",
+    "bg-cyan-500",
 ];
 
 interface ProjectModalProps {
@@ -72,32 +75,47 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+            {/* Modal */}
             <div
-                className="bg-white dark:bg-[#1a2744] rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-[#2a4066]"
+                className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md border border-border overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#2a4066]">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{project ? "Edit Project" : "New Project"}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a4066] transition-colors">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+                    <h2 className="text-lg font-semibold">{project ? "Edit Project" : "New Project"}</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Project Name <span className="text-red-500">*</span>
+                        <label className="block text-sm font-medium mb-2">
+                            Project Name <span className="text-destructive">*</span>
                         </label>
                         <Input
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Enter project name..."
-                            className="w-full"
+                            className="h-11"
                             required
+                            autoFocus
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium mb-2">
                             Description
                         </label>
                         <textarea
@@ -105,20 +123,66 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the project..."
                             rows={3}
-                            className="w-full rounded-xl border border-gray-200 dark:border-[#2a4066] bg-white dark:bg-[#0f1a2e] px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0047af] focus:border-transparent transition-all"
+                            className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-none"
                         />
                     </div>
+
                     <div className="flex gap-3 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                            className="flex-1 h-11"
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" className="flex-1 h-11 bg-[#0047af] hover:bg-[#003d96]" disabled={saving || !name.trim()}>
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (project ? "Update" : "Create Project")}
+                        <Button
+                            type="submit"
+                            className="flex-1 h-11"
+                            disabled={saving || !name.trim()}
+                        >
+                            {saving ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                project ? "Save Changes" : "Create Project"
+                            )}
                         </Button>
                     </div>
                 </form>
             </div>
         </div>
+    );
+}
+
+// Theme Toggle Button
+function ThemeToggle() {
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        setIsDark(isDarkMode);
+    }, []);
+
+    const toggleTheme = () => {
+        const newIsDark = !isDark;
+        setIsDark(newIsDark);
+        if (newIsDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+
+    return (
+        <button
+            onClick={toggleTheme}
+            className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
     );
 }
 
@@ -162,31 +226,35 @@ export default function BoardPage() {
         }
     }, [createProject, updateProject]);
 
+    // Loading state
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-[#0c1525] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#0047af]" />
-                    <p className="text-sm text-gray-500">Loading...</p>
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Loading Nexus...</p>
                 </div>
             </div>
         );
     }
 
+    // Not authenticated
     if (!account) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-[#0c1525] flex items-center justify-center p-4">
-                <Card className="max-w-sm w-full shadow-lg">
-                    <CardHeader className="text-center">
-                        <div className="w-12 h-12 rounded-xl bg-[#0047af] flex items-center justify-center mx-auto mb-3">
-                            <span className="text-white font-bold text-xl">N</span>
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <Card className="max-w-sm w-full shadow-soft-lg">
+                    <CardHeader className="text-center pb-2">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
+                            <span className="text-white font-bold text-2xl">N</span>
                         </div>
-                        <CardTitle>Welcome to Nexus</CardTitle>
+                        <CardTitle className="text-xl">Welcome to Nexus</CardTitle>
                     </CardHeader>
                     <CardContent className="text-center">
-                        <p className="text-gray-500 mb-4">Please sign in to continue</p>
+                        <p className="text-muted-foreground mb-6">Sign in to access your projects and tasks</p>
                         <Link href="/">
-                            <Button className="w-full bg-[#0047af] hover:bg-[#003d96]">Sign In</Button>
+                            <Button className="w-full h-11">Sign In with Microsoft</Button>
                         </Link>
                     </CardContent>
                 </Card>
@@ -195,35 +263,45 @@ export default function BoardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0c1525] flex">
-            {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-[#111d32] border-r border-gray-200 dark:border-[#1e3050] transition-all duration-300 flex flex-col shadow-sm`}>
+        <div className="min-h-screen bg-background flex">
+            {/* ===== Sidebar ===== */}
+            <aside
+                className={`${sidebarOpen ? 'w-64' : 'w-20'} flex-shrink-0 bg-card border-r border-border flex flex-col transition-all duration-300`}
+            >
                 {/* Logo */}
-                <div className="p-4 border-b border-gray-100 dark:border-[#1e3050]">
+                <div className="h-16 flex items-center px-4 border-b border-border">
                     <Link href="/" className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0047af] to-[#59cbe8] flex items-center justify-center shadow-lg shadow-[#0047af]/20">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-soft">
                             <span className="text-white font-bold text-lg">N</span>
                         </div>
-                        {sidebarOpen && <span className="font-semibold text-gray-900 dark:text-white text-lg">Nexus</span>}
+                        {sidebarOpen && (
+                            <span className="font-semibold text-lg">Nexus</span>
+                        )}
                     </Link>
                 </div>
 
-                {/* Navigation */}
-                <div className="p-3">
-                    <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a2744] transition-colors">
+                {/* Nav */}
+                <nav className="p-3 space-y-1">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
                         <Home className="w-5 h-5" />
-                        {sidebarOpen && <span className="text-sm font-medium">Home</span>}
+                        {sidebarOpen && <span className="text-sm font-medium">Dashboard</span>}
                     </Link>
-                </div>
+                </nav>
 
                 {/* Projects */}
-                <div className="flex-1 overflow-y-auto px-3 pb-3">
+                <div className="flex-1 overflow-y-auto px-3">
                     {sidebarOpen && (
-                        <div className="flex items-center justify-between mb-2 px-3">
-                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Projects</span>
+                        <div className="flex items-center justify-between mb-2 px-3 pt-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Projects
+                            </span>
                             <button
                                 onClick={handleCreateProject}
-                                className="text-[#0047af] hover:bg-[#0047af]/10 p-1 rounded-lg transition-colors"
+                                className="p-1 rounded text-primary hover:bg-primary/10 transition-colors"
+                                title="New Project"
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
@@ -231,21 +309,21 @@ export default function BoardPage() {
                     )}
 
                     {projectsLoading ? (
-                        <div className="flex justify-center py-6">
-                            <Loader2 className="w-5 h-5 animate-spin text-[#0047af]" />
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <div className="space-y-1">
+                        <div className="space-y-1 pb-3">
                             {projects.map((project, index) => (
                                 <button
                                     key={project.id}
                                     onClick={() => setActiveProject(project)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${activeProject?.id === project.id
-                                            ? 'bg-[#0047af]/10 text-[#0047af] dark:bg-[#0047af]/20 font-medium'
-                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a2744]'
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${activeProject?.id === project.id
+                                            ? 'bg-primary/10 text-primary font-medium'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                         }`}
                                 >
-                                    <div className={`w-2.5 h-2.5 rounded-full ${projectColors[index % projectColors.length]} shadow-sm`} />
+                                    <div className={`w-2 h-2 rounded-full ${projectDotColors[index % projectDotColors.length]}`} />
                                     {sidebarOpen && (
                                         <span className="flex-1 text-left truncate">{project.name}</span>
                                     )}
@@ -253,13 +331,13 @@ export default function BoardPage() {
                             ))}
 
                             {projects.length === 0 && sidebarOpen && (
-                                <div className="text-center py-6 px-3">
-                                    <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-[#1a2744] flex items-center justify-center mx-auto mb-3">
-                                        <Folder className="w-6 h-6 text-gray-400" />
+                                <div className="text-center py-8">
+                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
+                                        <Folder className="w-6 h-6 text-muted-foreground" />
                                     </div>
-                                    <p className="text-sm text-gray-500 mb-3">No projects yet</p>
-                                    <Button size="sm" onClick={handleCreateProject} className="bg-[#0047af] hover:bg-[#003d96]">
-                                        <Plus className="w-4 h-4 mr-1" /> Create
+                                    <p className="text-sm text-muted-foreground mb-4">No projects yet</p>
+                                    <Button size="sm" onClick={handleCreateProject}>
+                                        <Plus className="w-4 h-4 mr-1" /> New Project
                                     </Button>
                                 </div>
                             )}
@@ -268,63 +346,76 @@ export default function BoardPage() {
                 </div>
 
                 {/* User */}
-                <div className="p-3 border-t border-gray-100 dark:border-[#1e3050]">
-                    <div className="flex items-center gap-3 p-2">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0047af] to-[#59cbe8] flex items-center justify-center text-white text-sm font-medium shadow-md">
+                <div className="p-3 border-t border-border">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
                             {account.name?.charAt(0) || 'U'}
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{account.name}</p>
-                                <p className="text-xs text-gray-500 truncate">{account.username}</p>
+                                <p className="text-sm font-medium truncate">{account.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{account.username}</p>
                             </div>
                         )}
-                        <button onClick={logout} className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1a2744] transition-colors">
+                        <button
+                            onClick={logout}
+                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Sign out"
+                        >
                             <LogOut className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* ===== Main Content ===== */}
             <main className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <header className="h-16 bg-white dark:bg-[#111d32] border-b border-gray-200 dark:border-[#1e3050] flex items-center justify-between px-5 shadow-sm">
+                <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1a2744] transition-colors"
+                            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                         >
                             <LayoutGrid className="w-5 h-5" />
                         </button>
+
                         {activeProject ? (
                             <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${projectColors[projects.indexOf(activeProject) % projectColors.length]} shadow-sm`} />
-                                <h1 className="font-semibold text-gray-900 dark:text-white text-lg">{activeProject.name}</h1>
-                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                                <div className={`w-2.5 h-2.5 rounded-full ${projectDotColors[projects.indexOf(activeProject) % projectDotColors.length]}`} />
+                                <h1 className="font-semibold text-lg">{activeProject.name}</h1>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
                             </div>
                         ) : (
-                            <h1 className="font-semibold text-gray-900 dark:text-white text-lg">Select a Project</h1>
+                            <h1 className="font-semibold text-lg">Select a Project</h1>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        {/* Search */}
                         <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Search tasks..."
-                                className="w-64 h-10 pl-10 pr-4 text-sm bg-gray-50 dark:bg-[#0c1525] border border-gray-200 dark:border-[#1e3050] rounded-xl focus:ring-2 focus:ring-[#0047af] focus:border-transparent focus:outline-none transition-all"
+                                className="w-56 h-10 pl-9 pr-4 text-sm bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
                             />
                         </div>
-                        <button className="relative text-gray-500 hover:text-gray-700 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1a2744] transition-colors">
+
+                        {/* Theme Toggle */}
+                        <ThemeToggle />
+
+                        {/* Notifications */}
+                        <button className="relative p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ffc942] rounded-full border-2 border-white dark:border-[#111d32]" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
                         </button>
+
+                        {/* New Task Button */}
                         <Button
                             onClick={handleNewTask}
                             disabled={!activeProject}
-                            className="h-10 px-4 bg-[#0047af] hover:bg-[#003d96] shadow-md shadow-[#0047af]/20"
+                            className="h-10 px-4 ml-1"
                         >
                             <Plus className="w-4 h-4 mr-1.5" />
                             New Task
@@ -332,36 +423,34 @@ export default function BoardPage() {
                     </div>
                 </header>
 
-                {/* Board Tabs */}
-                <div className="bg-white dark:bg-[#111d32] border-b border-gray-200 dark:border-[#1e3050] px-5">
-                    <div className="flex gap-1">
-                        <button className="py-3.5 px-4 text-sm font-medium text-[#0047af] border-b-2 border-[#0047af] transition-colors">
-                            Board
-                        </button>
-                        <button className="py-3.5 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white border-b-2 border-transparent hover:border-gray-300 transition-colors">
-                            Timeline
-                        </button>
-                        <button className="py-3.5 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white border-b-2 border-transparent hover:border-gray-300 transition-colors">
-                            Table
-                        </button>
-                        <button className="py-3.5 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white border-b-2 border-transparent hover:border-gray-300 transition-colors">
-                            Calendar
-                        </button>
-                    </div>
+                {/* Tabs */}
+                <div className="h-12 bg-card border-b border-border px-6 flex items-center gap-1">
+                    <button className="h-full px-4 text-sm font-medium text-primary border-b-2 border-primary">
+                        Board
+                    </button>
+                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        Timeline
+                    </button>
+                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        Table
+                    </button>
+                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        Calendar
+                    </button>
                 </div>
 
-                {/* Kanban Board */}
-                <div className="flex-1 overflow-auto p-6 bg-gray-50 dark:bg-[#0c1525]">
+                {/* Board Area */}
+                <div className="flex-1 overflow-auto p-6 bg-muted/30">
                     {activeProject ? (
                         <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full">
-                            <div className="w-20 h-20 rounded-2xl bg-white dark:bg-[#111d32] flex items-center justify-center mb-4 shadow-lg">
-                                <Folder className="w-10 h-10 text-[#59cbe8]" />
+                            <div className="w-20 h-20 rounded-2xl bg-card shadow-soft-lg flex items-center justify-center mb-5">
+                                <Folder className="w-10 h-10 text-primary" />
                             </div>
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No project selected</h2>
-                            <p className="text-gray-500 mb-6">Create a new project or select one from the sidebar</p>
-                            <Button onClick={handleCreateProject} className="bg-[#0047af] hover:bg-[#003d96] shadow-lg shadow-[#0047af]/20">
+                            <h2 className="text-xl font-semibold mb-2">No project selected</h2>
+                            <p className="text-muted-foreground mb-6">Create a new project or select one from the sidebar</p>
+                            <Button onClick={handleCreateProject} size="lg">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Create Project
                             </Button>
