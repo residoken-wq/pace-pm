@@ -1,0 +1,44 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.17",
+    "version": "1.0.0",
+    "id": "b5a932d7-319c-43a9-923f-56149472304d",
+    "packageName": "com.pace.nexus",
+    "developer": {
+        "name": "PACE Institute",
+        "websiteUrl": "https://pmapp.pace.edu.vn",
+        "privacyUrl": "https://pmapp.pace.edu.vn/privacy",
+        "termsOfUseUrl": "https://pmapp.pace.edu.vn/terms"
+    },
+    "icons": {
+        "color": "color.png",
+        "outline": "outline.png"
+    },
+    "name": {
+        "short": "Nexus Project Hub",
+        "full": "Nexus Project Hub"
+    },
+    "description": {
+        "short": "PACE Project Management",
+        "full": "Enhanced Project Management for PACE Institute"
+    },
+    "accentColor": "#0f172a",
+    "staticTabs": [
+        {
+            "entityId": "board",
+            "name": "Project Board",
+            "contentUrl": "https://pmapp.pace.edu.vn/board",
+            "websiteUrl": "https://pmapp.pace.edu.vn/board",
+            "scopes": [
+                "personal"
+            ]
+        }
+    ],
+    "validDomains": [
+        "pmapp.pace.edu.vn"
+    ],
+    "webApplicationInfo": {
+        "id": "1af9ddd3-0b86-47fa-b9d0-2889bd93680f",
+        "resource": "api://pmapp.pace.edu.vn/1af9ddd3-0b86-47fa-b9d0-2889bd93680f"
+    }
+}

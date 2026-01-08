@@ -179,11 +179,134 @@ class ApiClient {
         });
     }
 
+    async syncTaskToTodo(id: string): Promise<{ todoId: string }> {
+        return this.request<{ todoId: string }>(`/tasks/${id}/sync-todo`, {
+            method: "POST",
+        });
+    }
+
+    // Members
+    async getMembers(workspaceId: string): Promise<Member[]> {
+        return this.request<Member[]>(`/members?workspaceId=${workspaceId}`);
+    }
+
+    async getAllUsers(): Promise<User[]> {
+        return this.request<User[]>("/members/users");
+    }
+
+    async addMember(data: AddMemberRequest): Promise<Member> {
+        return this.request<Member>("/members", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateMemberRole(userId: string, workspaceId: string, role: string): Promise<void> {
+        return this.request<void>(`/members/${userId}/role`, {
+            method: "PUT",
+            body: JSON.stringify({ workspaceId, role }),
+        });
+    }
+
+    async removeMember(userId: string, workspaceId: string): Promise<void> {
+        return this.request<void>(`/members/${userId}?workspaceId=${workspaceId}`, {
+            method: "DELETE",
+        });
+    }
+
+    async getWorkload(workspaceId: string): Promise<Workload[]> {
+        return this.request<Workload[]>(`/members/workload?workspaceId=${workspaceId}`);
+    }
+
+    // Files
+    async getAttachments(taskId: string): Promise<Attachment[]> {
+        return this.request<Attachment[]>(`/files?taskId=${taskId}`);
+    }
+
+    async uploadFile(taskId: string, file: File): Promise<Attachment> {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("taskId", taskId);
+
+        const headers: Record<string, string> = {};
+        if (this.getToken) {
+            const token = await this.getToken();
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+        }
+
+        const response = await fetch(`${this.baseUrl}/files/upload`, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Upload failed: ${response.status} - ${error}`);
+        }
+
+        return response.json();
+    }
+
+    async deleteAttachment(id: string): Promise<void> {
+        return this.request<void>(`/files/${id}`, { method: "DELETE" });
+    }
+
+    getDownloadUrl(id: string): string {
+        return `${this.baseUrl}/files/download/${id}`;
+    }
+
     // Health check
     async health(): Promise<{ status: string }> {
         return this.request<{ status: string }>("/health");
     }
 }
 
+// Member types
+export interface Member {
+    userId: string;
+    email: string;
+    displayName: string;
+    avatarUrl?: string;
+    jobTitle?: string;
+    department?: string;
+    role: WorkspaceRole;
+    joinedAt: string;
+}
+
+export type WorkspaceRole = "Owner" | "Admin" | "Member" | "Viewer";
+
+export interface AddMemberRequest {
+    workspaceId: string;
+    email: string;
+    displayName?: string;
+    microsoftId?: string;
+    role?: WorkspaceRole;
+}
+
+export interface Workload {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+    totalTasks: number;
+    todoTasks: number;
+    inProgressTasks: number;
+    doneTasks: number;
+    overdueTasks: number;
+}
+
+// File types
+export interface Attachment {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType?: string;
+    createdAt: string;
+}
+
 // Singleton instance
 export const api = new ApiClient(API_BASE_URL);
+

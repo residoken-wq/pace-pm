@@ -7,7 +7,7 @@ namespace NexusProjectHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-// [Authorize] // Temporarily disabled for testing
+[Authorize] // Temporarily disabled for testing
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;

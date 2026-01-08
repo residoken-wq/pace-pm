@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { api, Project, ProjectTask, TaskStatus } from "./client";
+import { api, Project, ProjectTask, TaskStatus, Member, AddMemberRequest, Workload, Attachment } from "./client";
 import { useAuth } from "@/lib/auth";
 
 // Hook to set auth token provider
@@ -122,6 +122,10 @@ export function useTasks(projectId: string) {
         return api.syncTaskToCalendar(id);
     }, []);
 
+    const syncToTodo = useCallback(async (id: string) => {
+        return api.syncTaskToTodo(id);
+    }, []);
+
     return {
         tasks,
         loading,
@@ -132,6 +136,7 @@ export function useTasks(projectId: string) {
         updateStatus,
         deleteTask,
         syncToCalendar,
+        syncToTodo,
     };
 }
 
@@ -152,5 +157,151 @@ export function useTasksByStatus(projectId: string) {
         loading,
         error,
         ...rest,
+    };
+}
+
+// Members hook
+export function useMembers(workspaceId: string) {
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useApiAuth();
+
+    const fetchMembers = useCallback(async () => {
+        if (!workspaceId) return;
+        try {
+            setLoading(true);
+            const data = await api.getMembers(workspaceId);
+            setMembers(data);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error("Failed to fetch members"));
+        } finally {
+            setLoading(false);
+        }
+    }, [workspaceId]);
+
+    useEffect(() => {
+        fetchMembers();
+    }, [fetchMembers]);
+
+    const addMember = useCallback(async (data: AddMemberRequest) => {
+        const created = await api.addMember(data);
+        setMembers((prev) => [...prev, created]);
+        return created;
+    }, []);
+
+    const updateRole = useCallback(async (userId: string, role: string) => {
+        await api.updateMemberRole(userId, workspaceId, role);
+        setMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, role: role as Member["role"] } : m)));
+    }, [workspaceId]);
+
+    const removeMember = useCallback(async (userId: string) => {
+        await api.removeMember(userId, workspaceId);
+        setMembers((prev) => prev.filter((m) => m.userId !== userId));
+    }, [workspaceId]);
+
+    return {
+        members,
+        loading,
+        error,
+        refetch: fetchMembers,
+        addMember,
+        updateRole,
+        removeMember,
+    };
+}
+
+// Workload hook
+export function useWorkload(workspaceId: string) {
+    const [workload, setWorkload] = useState<Workload[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useApiAuth();
+
+    const fetchWorkload = useCallback(async () => {
+        if (!workspaceId) return;
+        try {
+            setLoading(true);
+            const data = await api.getWorkload(workspaceId);
+            setWorkload(data);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error("Failed to fetch workload"));
+        } finally {
+            setLoading(false);
+        }
+    }, [workspaceId]);
+
+    useEffect(() => {
+        fetchWorkload();
+    }, [fetchWorkload]);
+
+    return {
+        workload,
+        loading,
+        error,
+        refetch: fetchWorkload,
+    };
+}
+
+// Attachments hook
+export function useAttachments(taskId: string) {
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+    const [uploading, setUploading] = useState(false);
+
+    useApiAuth();
+
+    const fetchAttachments = useCallback(async () => {
+        if (!taskId) return;
+        try {
+            setLoading(true);
+            const data = await api.getAttachments(taskId);
+            setAttachments(data);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error("Failed to fetch attachments"));
+        } finally {
+            setLoading(false);
+        }
+    }, [taskId]);
+
+    useEffect(() => {
+        fetchAttachments();
+    }, [fetchAttachments]);
+
+    const uploadFile = useCallback(async (file: File) => {
+        setUploading(true);
+        try {
+            const uploaded = await api.uploadFile(taskId, file);
+            setAttachments((prev) => [uploaded, ...prev]);
+            return uploaded;
+        } finally {
+            setUploading(false);
+        }
+    }, [taskId]);
+
+    const deleteAttachment = useCallback(async (id: string) => {
+        await api.deleteAttachment(id);
+        setAttachments((prev) => prev.filter((a) => a.id !== id));
+    }, []);
+
+    const getDownloadUrl = useCallback((id: string) => {
+        return api.getDownloadUrl(id);
+    }, []);
+
+    return {
+        attachments,
+        loading,
+        uploading,
+        error,
+        refetch: fetchAttachments,
+        uploadFile,
+        deleteAttachment,
+        getDownloadUrl,
     };
 }

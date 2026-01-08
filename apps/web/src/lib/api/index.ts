@@ -6,6 +6,13 @@ export type {
     ProjectTask,
     ProjectStatus,
     TaskStatus,
-    TaskPriority
+    TaskPriority,
+    Member,
+    AddMemberRequest,
+    Workload,
+    WorkspaceRole,
+    Attachment
 } from "./client";
-export { useProjects, useTasks, useTasksByStatus, useApiAuth } from "./hooks";
+export { useProjects, useTasks, useTasksByStatus, useApiAuth, useMembers, useWorkload, useAttachments } from "./hooks";
+
+
