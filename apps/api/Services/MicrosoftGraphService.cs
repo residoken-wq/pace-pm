@@ -1,5 +1,6 @@
 using Microsoft.Graph;
 using Microsoft.Identity.Web;
+using Microsoft.Graph.Models;
 using NexusProjectHub.API.Data;
 using NexusProjectHub.API.Models;
 
@@ -205,37 +206,24 @@ public class MicrosoftGraphService : IMicrosoftGraphService
         }
     }
 
-    public async Task<string> UploadToOneDriveAsync(string userId, string fileName, Stream fileStream)
-    {
-        try
-        {
             // Upload to "NexusProjectHub" folder in User's OneDrive
-            // Graph SDK v5: Users[id].Drive.Root.ItemWithPath("path").Content.PutAsync(stream)
-            // Note: Users[id].Drive defaults to the user's default drive. Properties like 'Root' might not be directly exposed if using an older generic request builder pattern, 
-            // but usually standard SDK matches. If 'Root' is missing, likely need explicit 'Items["root"]'.
-            // However, typically it is exposed. Let's try Items["root"] which is safer generic access if strict property missing.
-            
-            var driveItem = await _graphClient.Users[userId].Drive.Items["root"]
+            // Use 'Me' since we are in delegated flow and token belongs to the user
+            var driveItem = await _graphClient.Me.Drive.Root
                 .ItemWithPath($"NexusProjectHub/{fileName}")
                 .Content
                 .PutAsync(fileStream);
 
             _logger.LogInformation("Uploaded file {FileName} to OneDrive for user {UserId}", fileName, userId);
+            
+            // Return explicit composed ID or just ID to be safe
             return driveItem?.Id ?? "";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error uploading file {FileName} to OneDrive", fileName);
-            throw;
-        }
-    }
 
     public async Task<byte[]> DownloadFileFromOneDriveAsync(string userId, string fileId)
     {
         try
         {
-            // Access item by ID directly
-            var stream = await _graphClient.Users[userId].Drive.Items[fileId].Content.GetAsync();
+            // Access item by ID directly from Me.Drive
+            var stream = await _graphClient.Me.Drive.Items[fileId].Content.GetAsync();
             if (stream == null)
                 throw new FileNotFoundException("File content not found in OneDrive");
 
@@ -255,7 +243,7 @@ public class MicrosoftGraphService : IMicrosoftGraphService
         try
         {
             // Delete item by ID
-            await _graphClient.Users[userId].Drive.Items[fileId].DeleteAsync();
+            await _graphClient.Me.Drive.Items[fileId].DeleteAsync();
             _logger.LogInformation("Deleted file {FileId} from OneDrive", fileId);
         }
         catch (Exception ex)
