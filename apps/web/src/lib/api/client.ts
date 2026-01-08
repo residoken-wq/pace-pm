@@ -1,5 +1,5 @@
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+// API Configuration - NEXT_PUBLIC_API_URL should be base URL like https://pmapp.pace.edu.vn/api
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Types matching backend models
 export interface User {
@@ -110,71 +110,71 @@ class ApiClient {
 
     // Projects
     async getProjects(workspaceId: string): Promise<Project[]> {
-        return this.request<Project[]>(`/api/projects?workspaceId=${workspaceId}`);
+        return this.request<Project[]>(`/projects?workspaceId=${workspaceId}`);
     }
 
     async getProject(id: string): Promise<Project> {
-        return this.request<Project>(`/api/projects/${id}`);
+        return this.request<Project>(`/projects/${id}`);
     }
 
     async createProject(project: Partial<Project>): Promise<Project> {
-        return this.request<Project>("/api/projects", {
+        return this.request<Project>("/projects", {
             method: "POST",
             body: JSON.stringify(project),
         });
     }
 
     async updateProject(id: string, project: Partial<Project>): Promise<Project> {
-        return this.request<Project>(`/api/projects/${id}`, {
+        return this.request<Project>(`/projects/${id}`, {
             method: "PUT",
             body: JSON.stringify(project),
         });
     }
 
     async deleteProject(id: string): Promise<void> {
-        return this.request<void>(`/api/projects/${id}`, {
+        return this.request<void>(`/projects/${id}`, {
             method: "DELETE",
         });
     }
 
     // Tasks
     async getTasks(projectId: string): Promise<ProjectTask[]> {
-        return this.request<ProjectTask[]>(`/api/tasks?projectId=${projectId}`);
+        return this.request<ProjectTask[]>(`/tasks?projectId=${projectId}`);
     }
 
     async getTask(id: string): Promise<ProjectTask> {
-        return this.request<ProjectTask>(`/api/tasks/${id}`);
+        return this.request<ProjectTask>(`/tasks/${id}`);
     }
 
     async createTask(task: Partial<ProjectTask>): Promise<ProjectTask> {
-        return this.request<ProjectTask>("/api/tasks", {
+        return this.request<ProjectTask>("/tasks", {
             method: "POST",
             body: JSON.stringify(task),
         });
     }
 
     async updateTask(id: string, task: Partial<ProjectTask>): Promise<ProjectTask> {
-        return this.request<ProjectTask>(`/api/tasks/${id}`, {
+        return this.request<ProjectTask>(`/tasks/${id}`, {
             method: "PUT",
             body: JSON.stringify(task),
         });
     }
 
     async updateTaskStatus(id: string, status: TaskStatus): Promise<ProjectTask> {
-        return this.request<ProjectTask>(`/api/tasks/${id}/status`, {
+        return this.request<ProjectTask>(`/tasks/${id}/status`, {
             method: "PATCH",
             body: JSON.stringify({ status }),
         });
     }
 
     async deleteTask(id: string): Promise<void> {
-        return this.request<void>(`/api/tasks/${id}`, {
+        return this.request<void>(`/tasks/${id}`, {
             method: "DELETE",
         });
     }
 
     async syncTaskToCalendar(id: string): Promise<{ eventId: string }> {
-        return this.request<{ eventId: string }>(`/api/tasks/${id}/sync-calendar`, {
+        return this.request<{ eventId: string }>(`/tasks/${id}/sync-calendar`, {
             method: "POST",
         });
     }
