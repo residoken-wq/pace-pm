@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
-import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2, Diamond } from "lucide-react";
 import { useTasksByStatus, TaskStatus as ApiTaskStatus, TaskPriority as ApiPriority, ProjectTask } from "@/lib/api";
 
 // Column configuration with semantic colors
@@ -138,7 +138,7 @@ function KanbanColumn({ column, tasks, onDragStart, onDragOver, onDrop, onAddTas
 // ============================================
 // Task Modal (Enhanced)
 // ============================================
-interface TaskModalProps {
+export interface TaskModalProps {
     isOpen: boolean;
     task?: ProjectTask | null;
     defaultStatus?: ApiTaskStatus;
@@ -149,12 +149,13 @@ interface TaskModalProps {
     onSyncToTodo?: (taskId: string) => Promise<any>;
 }
 
-function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onSyncToCalendar, onSyncToTodo }: TaskModalProps) {
+export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onSyncToCalendar, onSyncToTodo }: TaskModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<ApiPriority>("Medium");
     const [status, setStatus] = useState<ApiTaskStatus>("Todo");
     const [dueDate, setDueDate] = useState("");
+    const [isMilestone, setIsMilestone] = useState(false);
     const [saving, setSaving] = useState(false);
     const [syncing, setSyncing] = useState<"calendar" | "todo" | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -166,12 +167,14 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onS
             setPriority(task.priority);
             setStatus(task.status);
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
+            setIsMilestone(task.isMilestone || false);
         } else {
             setTitle("");
             setDescription("");
             setPriority("Medium");
             setStatus(defaultStatus || "Todo");
             setDueDate("");
+            setIsMilestone(false);
         }
         setShowDeleteConfirm(false);
     }, [task, defaultStatus, isOpen]);
@@ -189,6 +192,7 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onS
                 priority,
                 status,
                 dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+                isMilestone,
             });
             onClose();
         } finally {
@@ -346,6 +350,24 @@ function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onS
                                 </div>
                             </div>
                         )}
+
+                        {/* Milestone Toggle */}
+                        <div className="flex items-center gap-2 pb-2">
+                            <label className="text-sm font-medium">Task Type</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="isMilestone"
+                                    checked={isMilestone}
+                                    onChange={(e) => setIsMilestone(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor="isMilestone" className="text-sm text-foreground flex items-center gap-1 cursor-pointer select-none">
+                                    <Diamond className={`w-4 h-4 ${isMilestone ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                                    Mark as Milestone
+                                </label>
+                            </div>
+                        </div>
 
                         {/* Actions */}
                         <div className="flex gap-3 pt-2">

@@ -26,6 +26,63 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { WBSTreeView } from "@/components/board/WBSTreeView";
+import { useTasksByStatus, ProjectTask } from "@/lib/api";
+import { TaskModal } from "@/components/board/KanbanBoard";
+
+// ============================================
+// WBS Container (to hold state for Tree View)
+// ============================================
+function WBSContainer({ projectId, activeProject }: { projectId: string, activeProject: any }) {
+    const { tasksByStatus, loading, createTask, updateTask, deleteTask } = useTasksByStatus(projectId);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
+    const [parentTaskId, setParentTaskId] = useState<string | undefined>(undefined);
+
+    // Flatten tasks from status columns to single list for WBS
+    const allTasks = Object.values(tasksByStatus).flat();
+
+    const handleAddTask = (parentId?: string) => {
+        setSelectedTask(null);
+        setParentTaskId(parentId);
+        setModalOpen(true);
+    };
+
+    const handleTaskClick = (task: ProjectTask) => {
+        setSelectedTask(task);
+        setParentTaskId(undefined);
+        setModalOpen(true);
+    };
+
+    const handleSaveTask = async (taskData: Partial<ProjectTask>) => {
+        try {
+            if (taskData.id) {
+                await updateTask(taskData.id, taskData);
+            } else {
+                await createTask({ ...taskData, parentId: parentTaskId, projectId });
+            }
+        } catch (err) {
+            console.error("Failed to save task:", err);
+        }
+    };
+
+    return (
+        <>
+            <WBSTreeView
+                tasks={allTasks}
+                onTaskClick={handleTaskClick}
+                onAddTask={handleAddTask}
+            />
+            <TaskModal
+                isOpen={modalOpen}
+                task={selectedTask}
+                onClose={() => setModalOpen(false)}
+                onSave={handleSaveTask}
+                onDelete={(id) => deleteTask(id)}
+            />
+        </>
+    );
+}
 
 const DEFAULT_WORKSPACE_ID = "default";
 
@@ -310,6 +367,7 @@ export default function BoardPage() {
     const [deleting, setDeleting] = useState(false);
     const [taskModalTrigger, setTaskModalTrigger] = useState(0);
     const [teamPanelOpen, setTeamPanelOpen] = useState(false);
+    const [view, setView] = useState<"board" | "wbs">("board");
 
     useEffect(() => {
         if (projects.length > 0 && !activeProject) {
@@ -567,7 +625,18 @@ export default function BoardPage() {
 
                 {/* Tabs */}
                 <div className="h-12 bg-card border-b border-border px-6 flex items-center gap-1">
-                    <button className="h-full px-4 text-sm font-medium text-primary border-b-2 border-primary">Board</button>
+                    <button
+                        onClick={() => setView("board")}
+                        className={`h-full px-4 text-sm font-medium transition-colors border-b-2 ${view === "board" ? "text-primary border-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
+                    >
+                        Board
+                    </button>
+                    <button
+                        onClick={() => setView("wbs")}
+                        className={`h-full px-4 text-sm font-medium transition-colors border-b-2 ${view === "wbs" ? "text-primary border-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
+                    >
+                        WBS & Milestones
+                    </button>
                     {/* Placeholder for future views
                     <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Timeline</button>
                     <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Table</button>
@@ -578,7 +647,12 @@ export default function BoardPage() {
                 {/* Board Area */}
                 <div className="flex-1 overflow-auto p-6 bg-muted/30">
                     {activeProject ? (
-                        <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
+                        view === "board" ? (
+                            <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
+                        ) : (
+                            // WBS View Logic (Inline to access page state/modals)
+                            <WBSContainer projectId={activeProject.id} activeProject={activeProject} />
+                        )
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full">
                             <div className="w-20 h-20 rounded-2xl bg-card shadow-soft-lg flex items-center justify-center mb-5">

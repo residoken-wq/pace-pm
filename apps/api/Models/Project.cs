@@ -65,6 +65,8 @@ public class ProjectTask
     public double? ActualHours { get; set; }
     
     public int SortOrder { get; set; } = 0;
+
+    public bool IsMilestone { get; set; } = false;
     
     // Microsoft 365 Sync
     public string? OutlookEventId { get; set; }

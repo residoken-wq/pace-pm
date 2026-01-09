@@ -54,6 +54,7 @@ export interface ProjectTask {
     parentId?: string;
     outlookEventId?: string;
     todoTaskId?: string;
+    isMilestone?: boolean;
     createdAt: string;
     updatedAt: string;
 }

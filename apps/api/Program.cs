@@ -119,6 +119,23 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogInformation("Ensuring database schema exists...");
         db.Database.EnsureCreated();
+        
+        // Manual schema update for Milestones (since we aren't using migrations properly yet)
+        try 
+        {
+            db.Database.ExecuteSqlRaw(@"
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Tasks' AND column_name = 'IsMilestone') THEN 
+                        ALTER TABLE ""Tasks"" ADD COLUMN ""IsMilestone"" boolean DEFAULT false; 
+                    END IF; 
+                END $$;");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to apply schema update for IsMilestone");
+        }
+
         logger.LogInformation("Database schema ready.");
 
         // Seeding Default Workspace
