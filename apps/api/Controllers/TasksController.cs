@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
+using Microsoft.EntityFrameworkCore;
 using NexusProjectHub.API.Models;
 using NexusProjectHub.API.Services;
 
@@ -13,15 +14,18 @@ public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
     private readonly IMicrosoftGraphService _graphService;
+    private readonly NexusProjectHub.API.Data.AppDbContext _context;
     private readonly ILogger<TasksController> _logger;
 
     public TasksController(
         ITaskService taskService,
         IMicrosoftGraphService graphService,
+        NexusProjectHub.API.Data.AppDbContext context,
         ILogger<TasksController> logger)
     {
         _taskService = taskService;
         _graphService = graphService;
+        _context = context;
         _logger = logger;
     }
 
@@ -48,13 +52,40 @@ public class TasksController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProjectTask>> CreateTask([FromBody] CreateTaskRequest request)
     {
+        // Resolve Creator from Token
+        var userId = User.GetObjectId();
+        if (string.IsNullOrEmpty(userId))
+            userId = User.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value 
+                     ?? User.FindFirst("oid")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized("User ID not found in token");
+
+        var creator = await _context.Users.FirstOrDefaultAsync(u => u.MicrosoftId == userId);
+        
+        // If user not found in DB (edge case: first API call before frontend sync), try to sync
+        if (creator == null)
+        {
+             // We can't easily call GraphService.GetOrCreateUserAsync without a token here unless we use ITokenAcquisition.
+             // But for now, let's assume if it fails, we return generic error or try to create a placeholder.
+             // Actually, since this is a protected API, we trust the token. We can create a placeholder user.
+             creator = new Models.User 
+             { 
+                 MicrosoftId = userId, 
+                 Email = User.Identity?.Name ?? "unknown@example.com", 
+                 DisplayName = User.FindFirst("name")?.Value ?? "Unknown User" 
+             };
+             _context.Users.Add(creator);
+             await _context.SaveChangesAsync();
+        }
+
         var task = new ProjectTask
         {
             Title = request.Title,
             Description = request.Description,
             ProjectId = request.ProjectId,
             AssigneeId = request.AssigneeId,
-            CreatorId = request.CreatorId ?? "system",
+            CreatorId = creator.Id, // Use the internal DB ID
             Priority = request.Priority,
             DueDate = request.DueDate,
             ParentId = request.ParentId
