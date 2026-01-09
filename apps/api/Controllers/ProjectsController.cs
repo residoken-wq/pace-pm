@@ -22,11 +22,19 @@ public class ProjectsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Project>>> GetProjects([FromQuery] string workspaceId)
     {
-        if (string.IsNullOrEmpty(workspaceId))
-            return BadRequest("workspaceId is required");
+        try 
+        {
+            if (string.IsNullOrEmpty(workspaceId))
+                return BadRequest("workspaceId is required");
 
-        var projects = await _projectService.GetProjectsAsync(workspaceId);
-        return Ok(projects);
+            var projects = await _projectService.GetProjectsAsync(workspaceId);
+            return Ok(projects);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting projects for workspace {WorkspaceId}", workspaceId);
+            return StatusCode(500, "Internal Server Error fetching projects");
+        }
     }
 
     [HttpGet("{id}")]
