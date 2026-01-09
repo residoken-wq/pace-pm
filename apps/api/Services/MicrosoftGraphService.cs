@@ -34,7 +34,21 @@ public class MicrosoftGraphService : IMicrosoftGraphService
                 throw new InvalidOperationException("Failed to get user from Microsoft Graph");
 
             // Check if user exists in our database
-            var existingUser = _db.Users.FirstOrDefault(u => u.MicrosoftId == graphUser.Id);
+            var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.MicrosoftId == graphUser.Id);
+
+            if (existingUser == null)
+            {
+                var email = graphUser.Mail ?? graphUser.UserPrincipalName;
+                if (!string.IsNullOrEmpty(email))
+                {
+                    existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+                    if (existingUser != null)
+                    {
+                        _logger.LogInformation("Linking existing user {Email} to MicrosoftId {Id}", email, graphUser.Id);
+                        existingUser.MicrosoftId = graphUser.Id;
+                    }
+                }
+            }
             
             if (existingUser != null)
             {

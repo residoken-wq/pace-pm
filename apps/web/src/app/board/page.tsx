@@ -568,9 +568,11 @@ export default function BoardPage() {
                 {/* Tabs */}
                 <div className="h-12 bg-card border-b border-border px-6 flex items-center gap-1">
                     <button className="h-full px-4 text-sm font-medium text-primary border-b-2 border-primary">Board</button>
+                    {/* Placeholder for future views
                     <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Timeline</button>
                     <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Table</button>
                     <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Calendar</button>
+                    */}
                 </div>
 
                 {/* Board Area */}
