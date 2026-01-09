@@ -100,7 +100,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 // ============================================
-// Auto-migrate database on startup
+// Auto-create database schema on startup
 // ============================================
 using (var scope = app.Services.CreateScope())
 {
@@ -109,14 +109,13 @@ using (var scope = app.Services.CreateScope())
     
     try
     {
-        logger.LogInformation("Applying database migrations...");
-        db.Database.Migrate();
-        logger.LogInformation("Database migrations applied successfully.");
+        logger.LogInformation("Ensuring database schema exists...");
+        db.Database.EnsureCreated();
+        logger.LogInformation("Database schema ready.");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error applying database migrations. Using EnsureCreated as fallback.");
-        db.Database.EnsureCreated();
+        logger.LogError(ex, "Error creating database schema.");
     }
 }
 
