@@ -17,9 +17,9 @@ export const loginRequest = {
     scopes: ["User.Read", "openid", "profile", "email"],
 };
 
-// API scopes for backend
+// API scopes for backend (Using /.default to request all configured permissions)
 export const apiRequest = {
-    scopes: [`api://${process.env.NEXT_PUBLIC_AZURE_AD_CLIENT_ID}/access_as_user`],
+    scopes: [`api://${process.env.NEXT_PUBLIC_AZURE_AD_CLIENT_ID}/.default`],
 };
 
 // Graph API scopes

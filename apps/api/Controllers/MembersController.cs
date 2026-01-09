@@ -23,26 +23,35 @@ public class MembersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MemberDto>>> GetMembers([FromQuery] string workspaceId)
     {
-        if (string.IsNullOrEmpty(workspaceId))
-            return BadRequest("workspaceId is required");
+        try 
+        {
+            if (string.IsNullOrEmpty(workspaceId))
+                return BadRequest("workspaceId is required");
 
-        var members = await _db.WorkspaceMembers
-            .Include(m => m.User)
-            .Where(m => m.WorkspaceId == workspaceId)
-            .Select(m => new MemberDto
-            {
-                UserId = m.UserId,
-                Email = m.User.Email,
-                DisplayName = m.User.DisplayName,
-                AvatarUrl = m.User.AvatarUrl,
-                JobTitle = m.User.JobTitle,
-                Department = m.User.Department,
-                Role = m.Role.ToString(),
-                JoinedAt = m.JoinedAt
-            })
-            .ToListAsync();
+            var members = await _db.WorkspaceMembers
+                .AsNoTracking()
+                .Include(m => m.User)
+                .Where(m => m.WorkspaceId == workspaceId)
+                .Select(m => new MemberDto
+                {
+                    UserId = m.UserId,
+                    Email = m.User.Email,
+                    DisplayName = m.User.DisplayName,
+                    AvatarUrl = m.User.AvatarUrl,
+                    JobTitle = m.User.JobTitle,
+                    Department = m.User.Department,
+                    Role = m.Role.ToString(),
+                    JoinedAt = m.JoinedAt
+                })
+                .ToListAsync();
 
-        return Ok(members);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching members for workspace {WorkspaceId}", workspaceId);
+            return StatusCode(500, "Internal Server Error fetching members");
+        }
     }
 
     // GET: api/members/users - Get all users for assignment dropdown
