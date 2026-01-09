@@ -126,8 +126,9 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
       API_URL: "http://api:5000/api"
-      NEXT_PUBLIC_CLIENT_ID: ${NEXT_PUBLIC_CLIENT_ID}
-      NEXT_PUBLIC_AUTHORITY: ${NEXT_PUBLIC_AUTHORITY}
+      # Pass Azure AD vars to container (next.config.ts enriches process.env)
+      NEXT_PUBLIC_AZURE_AD_CLIENT_ID: ${NEXT_PUBLIC_AZURE_AD_CLIENT_ID}
+      NEXT_PUBLIC_AZURE_AD_TENANT_ID: ${NEXT_PUBLIC_AZURE_AD_TENANT_ID}
     networks:
       - nexus-network
     depends_on:

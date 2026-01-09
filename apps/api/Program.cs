@@ -13,6 +13,15 @@ builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration,
     .AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
     .AddInMemoryTokenCaches();
 
+// Fix: Explicitly allow the Client ID as a valid audience (generic JWT config)
+builder.Services.Configure<Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerOptions>(
+    Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme, 
+    options =>
+    {
+        var clientId = builder.Configuration["AzureAd:ClientId"];
+        options.TokenValidationParameters.ValidAudiences = new[] { clientId, $"api://{clientId}" };
+    });
+
 // ============================================
 // Database - PostgreSQL
 // ============================================
