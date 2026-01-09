@@ -112,10 +112,25 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Ensuring database schema exists...");
         db.Database.EnsureCreated();
         logger.LogInformation("Database schema ready.");
+
+        // Seeding Default Workspace
+        if (!db.Workspaces.Any())
+        {
+            logger.LogInformation("Seeding default workspace...");
+            db.Workspaces.Add(new NexusProjectHub.API.Models.Workspace
+            {
+                Id = "default",
+                Name = "Default Workspace",
+                Slug = "default",
+                Description = "Main workspace for Nexus Project Hub"
+            });
+            db.SaveChanges();
+            logger.LogInformation("Default workspace seeded.");
+        }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error creating database schema.");
+        logger.LogError(ex, "Error initializing database.");
     }
 }
 
