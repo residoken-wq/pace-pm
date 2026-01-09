@@ -12,16 +12,16 @@ namespace NexusProjectHub.API.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
-    // private readonly IMicrosoftGraphService _graphService;
+    private readonly IMicrosoftGraphService _graphService;
     private readonly ILogger<TasksController> _logger;
 
     public TasksController(
         ITaskService taskService,
-        // IMicrosoftGraphService graphService,
+        IMicrosoftGraphService graphService,
         ILogger<TasksController> logger)
     {
         _taskService = taskService;
-        // _graphService = graphService;
+        _graphService = graphService;
         _logger = logger;
     }
 
@@ -133,13 +133,13 @@ public class TasksController : ControllerBase
             // but our current implementation uses Users[id].
             // If the token is for 'Me', Users[my-id] also works.
             
-            // var eventId = await _graphService.CreateCalendarEventAsync(userId, task);
+            var eventId = await _graphService.CreateCalendarEventAsync(userId, task);
             
             // Allow re-sync: if checks exist we can update instead of create, but for now simple create
-            // task.OutlookEventId = eventId;
-            // await _taskService.UpdateTaskAsync(task);
+            task.OutlookEventId = eventId;
+            await _taskService.UpdateTaskAsync(task);
 
-            return Ok(new { eventId = "disabled-for-di-debug" });
+            return Ok(new { eventId });
         }
         catch (Exception ex)
         {
@@ -165,12 +165,12 @@ public class TasksController : ControllerBase
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("User ID not found in token");
             
-            // var todoId = await _graphService.CreateTodoTaskAsync(userId, task);
+            var todoId = await _graphService.CreateTodoTaskAsync(userId, task);
             
-            // task.TodoTaskId = todoId;
-            // await _taskService.UpdateTaskAsync(task);
+            task.TodoTaskId = todoId;
+            await _taskService.UpdateTaskAsync(task);
 
-            return Ok(new { todoId = "disabled-for-di-debug" });
+            return Ok(new { todoId });
         }
         catch (Exception ex)
         {

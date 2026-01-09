@@ -8,6 +8,14 @@ var builder = WebApplication.CreateBuilder(args);
 // ============================================
 // Authentication - Microsoft Entra ID
 // ============================================
+var clientId = builder.Configuration["AzureAd:ClientId"];
+var tenantId = builder.Configuration["AzureAd:TenantId"];
+var scopes = builder.Configuration["MicrosoftGraph:Scopes"];
+
+Console.WriteLine($"[Startup] AzureAd:ClientId = {clientId}");
+Console.WriteLine($"[Startup] AzureAd:TenantId = {tenantId}");
+Console.WriteLine($"[Startup] Graph:Scopes     = {scopes}");
+
 builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration, "AzureAd")
     .EnableTokenAcquisitionToCallDownstreamApi()
     .AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
