@@ -156,24 +156,30 @@ public class MembersController : ControllerBase
     [HttpGet("workload")]
     public async Task<ActionResult<IEnumerable<WorkloadDto>>> GetWorkload([FromQuery] string workspaceId)
     {
-        var members = await _db.WorkspaceMembers
-            .Include(m => m.User)
-                .ThenInclude(u => u.AssignedTasks)
-            .Where(m => m.WorkspaceId == workspaceId)
-            .Select(m => new WorkloadDto
-            {
-                UserId = m.UserId,
-                DisplayName = m.User.DisplayName,
-                AvatarUrl = m.User.AvatarUrl,
-                TotalTasks = m.User.AssignedTasks.Count,
-                TodoTasks = m.User.AssignedTasks.Count(t => t.Status == TaskStatus.Todo),
-                InProgressTasks = m.User.AssignedTasks.Count(t => t.Status == TaskStatus.InProgress),
-                DoneTasks = m.User.AssignedTasks.Count(t => t.Status == TaskStatus.Done),
-                OverdueTasks = m.User.AssignedTasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Done)
-            })
-            .ToListAsync();
+        try 
+        {
+            var members = await _db.Users
+                .Where(u => u.Workspaces.Any(wm => wm.WorkspaceId == workspaceId))
+                .Select(u => new WorkloadDto
+                {
+                    UserId = u.Id,
+                    DisplayName = u.DisplayName,
+                    AvatarUrl = u.AvatarUrl,
+                    TotalTasks = u.AssignedTasks.Count,
+                    TodoTasks = u.AssignedTasks.Count(t => t.Status == TaskStatus.Todo),
+                    InProgressTasks = u.AssignedTasks.Count(t => t.Status == TaskStatus.InProgress),
+                    DoneTasks = u.AssignedTasks.Count(t => t.Status == TaskStatus.Done),
+                    OverdueTasks = u.AssignedTasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Done)
+                })
+                .ToListAsync();
 
-        return Ok(members);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting workload for workspace {WorkspaceId}", workspaceId);
+            return StatusCode(500, "Internal error fetching workload");
+        }
     }
 }
 
