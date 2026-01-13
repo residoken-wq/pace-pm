@@ -2,9 +2,17 @@
 "use client";
 
 import { useState } from "react";
-import { ProjectTask, TaskStatus, TaskPriority } from "@/lib/api";
-import { ChevronRight, ChevronDown, Circle, CheckCircle2, Diamond, MoreHorizontal, Plus } from "lucide-react";
+import { ProjectTask, TaskStatus, TaskPriority, TaskType } from "@/lib/api";
+import { ChevronRight, ChevronDown, Circle, CheckCircle2, Diamond, MoreHorizontal, Plus, MapPin, Target, ListTodo, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui";
+
+// Task type icons and colors
+const taskTypeConfig: Record<TaskType, { icon: typeof MapPin; color: string; bgColor: string }> = {
+    RoadmapPhase: { icon: MapPin, color: "text-purple-500", bgColor: "bg-purple-100 dark:bg-purple-900/30" },
+    Milestone: { icon: Target, color: "text-amber-500", bgColor: "bg-amber-100 dark:bg-amber-900/30" },
+    Task: { icon: ListTodo, color: "text-blue-500", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
+    Subtask: { icon: CheckSquare, color: "text-slate-500", bgColor: "bg-slate-100 dark:bg-slate-900/30" },
+};
 
 interface WBSTreeViewProps {
     tasks: ProjectTask[];
@@ -53,15 +61,13 @@ const TreeNode = ({
                     {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
 
-                {/* Status/Milestone Icon */}
-                <div className={`flex-shrink-0 ${statusColor}`}>
-                    {task.isMilestone ? (
-                        <Diamond className="w-5 h-5 fill-current" />
-                    ) : task.status === "Done" ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                        <Circle className="w-5 h-5" />
-                    )}
+                {/* Task Type Icon */}
+                <div className={`flex-shrink-0 p-1 rounded ${taskTypeConfig[task.type || "Task"].bgColor}`}>
+                    {(() => {
+                        const TypeIcon = taskTypeConfig[task.type || "Task"].icon;
+                        const color = task.status === "Done" ? "text-muted-foreground" : taskTypeConfig[task.type || "Task"].color;
+                        return <TypeIcon className={`w-4 h-4 ${color}`} />;
+                    })()}
                 </div>
 
                 {/* Content */}

@@ -88,7 +88,8 @@ public class TasksController : ControllerBase
             CreatorId = creator.Id, // Use the internal DB ID
             Priority = request.Priority,
             DueDate = request.DueDate,
-            ParentId = request.ParentId
+            ParentId = request.ParentId,
+            Type = request.Type
         };
 
         var created = await _taskService.CreateTaskAsync(task);
@@ -111,6 +112,7 @@ public class TasksController : ControllerBase
         task.EstimatedHours = request.EstimatedHours ?? task.EstimatedHours;
         task.ActualHours = request.ActualHours ?? task.ActualHours;
         task.SortOrder = request.SortOrder ?? task.SortOrder;
+        task.Type = request.Type ?? task.Type;
 
         var updated = await _taskService.UpdateTaskAsync(task);
         return Ok(updated);
@@ -209,6 +211,71 @@ public class TasksController : ControllerBase
             return StatusCode(500, "Failed to sync to To-Do: " + ex.Message);
         }
     }
+
+    // ==========================================
+    // CHECKLIST ENDPOINTS
+    // ==========================================
+
+    [HttpGet("{taskId}/checklist")]
+    public async Task<ActionResult<IEnumerable<ChecklistItem>>> GetChecklistItems(string taskId)
+    {
+        var items = await _context.ChecklistItems
+            .Where(c => c.TaskId == taskId)
+            .OrderBy(c => c.SortOrder)
+            .ToListAsync();
+        return Ok(items);
+    }
+
+    [HttpPost("{taskId}/checklist")]
+    public async Task<ActionResult<ChecklistItem>> AddChecklistItem(string taskId, [FromBody] CreateChecklistItemRequest request)
+    {
+        var task = await _taskService.GetTaskByIdAsync(taskId);
+        if (task == null)
+            return NotFound("Task not found");
+
+        var maxOrder = await _context.ChecklistItems
+            .Where(c => c.TaskId == taskId)
+            .MaxAsync(c => (int?)c.SortOrder) ?? 0;
+
+        var item = new ChecklistItem
+        {
+            Title = request.Title,
+            TaskId = taskId,
+            SortOrder = maxOrder + 1
+        };
+
+        _context.ChecklistItems.Add(item);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetChecklistItems), new { taskId }, item);
+    }
+
+    [HttpPatch("{taskId}/checklist/{itemId}")]
+    public async Task<ActionResult<ChecklistItem>> UpdateChecklistItem(string taskId, string itemId, [FromBody] UpdateChecklistItemRequest request)
+    {
+        var item = await _context.ChecklistItems.FirstOrDefaultAsync(c => c.Id == itemId && c.TaskId == taskId);
+        if (item == null)
+            return NotFound();
+
+        if (request.Title != null) item.Title = request.Title;
+        if (request.IsCompleted != null) item.IsCompleted = request.IsCompleted.Value;
+        if (request.SortOrder != null) item.SortOrder = request.SortOrder.Value;
+
+        await _context.SaveChangesAsync();
+        return Ok(item);
+    }
+
+    [HttpDelete("{taskId}/checklist/{itemId}")]
+    public async Task<IActionResult> DeleteChecklistItem(string taskId, string itemId)
+    {
+        var item = await _context.ChecklistItems.FirstOrDefaultAsync(c => c.Id == itemId && c.TaskId == taskId);
+        if (item == null)
+            return NotFound();
+
+        _context.ChecklistItems.Remove(item);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
 }
 
 public record CreateTaskRequest(
@@ -219,7 +286,8 @@ public record CreateTaskRequest(
     string? AssigneeId,
     TaskPriority Priority = TaskPriority.Medium,
     DateTime? DueDate = null,
-    string? ParentId = null
+    string? ParentId = null,
+    TaskType Type = TaskType.Task
 );
 
 public record UpdateTaskRequest(
@@ -231,7 +299,12 @@ public record UpdateTaskRequest(
     string? AssigneeId,
     double? EstimatedHours,
     double? ActualHours,
-    int? SortOrder
+    int? SortOrder,
+    TaskType? Type
 );
 
 public record UpdateStatusRequest(Models.TaskStatus Status);
+
+public record CreateChecklistItemRequest(string Title);
+
+public record UpdateChecklistItemRequest(string? Title, bool? IsCompleted, int? SortOrder);

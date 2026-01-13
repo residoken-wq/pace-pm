@@ -42,6 +42,7 @@ export interface ProjectTask {
     description?: string;
     status: TaskStatus;
     priority: TaskPriority;
+    type: TaskType;
     dueDate?: string;
     estimatedHours?: number;
     actualHours?: number;
@@ -55,12 +56,23 @@ export interface ProjectTask {
     outlookEventId?: string;
     todoTaskId?: string;
     isMilestone?: boolean;
+    checklistItems?: ChecklistItem[];
     createdAt: string;
     updatedAt: string;
 }
 
 export type TaskStatus = "Todo" | "InProgress" | "InReview" | "Done" | "Cancelled";
 export type TaskPriority = "Low" | "Medium" | "High" | "Urgent";
+export type TaskType = "RoadmapPhase" | "Milestone" | "Task" | "Subtask";
+
+export interface ChecklistItem {
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    sortOrder: number;
+    taskId: string;
+    createdAt: string;
+}
 
 // API Client class
 class ApiClient {
@@ -183,6 +195,31 @@ class ApiClient {
     async syncTaskToTodo(id: string): Promise<{ todoId: string }> {
         return this.request<{ todoId: string }>(`/tasks/${id}/sync-todo`, {
             method: "POST",
+        });
+    }
+
+    // Checklist Items
+    async getChecklistItems(taskId: string): Promise<ChecklistItem[]> {
+        return this.request<ChecklistItem[]>(`/tasks/${taskId}/checklist`);
+    }
+
+    async addChecklistItem(taskId: string, title: string): Promise<ChecklistItem> {
+        return this.request<ChecklistItem>(`/tasks/${taskId}/checklist`, {
+            method: "POST",
+            body: JSON.stringify({ title }),
+        });
+    }
+
+    async updateChecklistItem(taskId: string, itemId: string, data: Partial<ChecklistItem>): Promise<ChecklistItem> {
+        return this.request<ChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+            method: "PATCH",
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteChecklistItem(taskId: string, itemId: string): Promise<void> {
+        return this.request<void>(`/tasks/${taskId}/checklist/${itemId}`, {
+            method: "DELETE",
         });
     }
 

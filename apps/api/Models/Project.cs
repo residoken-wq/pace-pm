@@ -68,6 +68,8 @@ public class ProjectTask
 
     public bool IsMilestone { get; set; } = false;
     
+    public TaskType Type { get; set; } = TaskType.Task;
+    
     // Microsoft 365 Sync
     public string? OutlookEventId { get; set; }
     public string? TodoTaskId { get; set; }
@@ -90,6 +92,7 @@ public class ProjectTask
     public ICollection<ProjectTask> Subtasks { get; set; } = new List<ProjectTask>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+    public ICollection<ChecklistItem> ChecklistItems { get; set; } = new List<ChecklistItem>();
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -110,6 +113,14 @@ public enum TaskPriority
     Medium,
     High,
     Urgent
+}
+
+public enum TaskType
+{
+    RoadmapPhase,
+    Milestone,
+    Task,
+    Subtask
 }
 
 public class Comment
@@ -148,6 +159,25 @@ public class Attachment
     
     // OneDrive/SharePoint reference
     public string? DriveItemId { get; set; }
+    
+    public string TaskId { get; set; } = string.Empty;
+    public ProjectTask Task { get; set; } = null!;
+    
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class ChecklistItem
+{
+    [Key]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    
+    [Required]
+    [MaxLength(500)]
+    public string Title { get; set; } = string.Empty;
+    
+    public bool IsCompleted { get; set; } = false;
+    
+    public int SortOrder { get; set; } = 0;
     
     public string TaskId { get; set; } = string.Empty;
     public ProjectTask Task { get; set; } = null!;

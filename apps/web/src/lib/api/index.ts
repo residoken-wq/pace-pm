@@ -7,6 +7,8 @@ export type {
     ProjectStatus,
     TaskStatus,
     TaskPriority,
+    TaskType,
+    ChecklistItem,
     Member,
     AddMemberRequest,
     Workload,

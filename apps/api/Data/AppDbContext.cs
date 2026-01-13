@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<ProjectTask> Tasks => Set<ProjectTask>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,6 +96,14 @@ public class AppDbContext : DbContext
         {
             entity.HasOne(e => e.Task)
                 .WithMany(t => t.Attachments)
+                .HasForeignKey(e => e.TaskId);
+        });
+
+        // ChecklistItem
+        modelBuilder.Entity<ChecklistItem>(entity =>
+        {
+            entity.HasOne(e => e.Task)
+                .WithMany(t => t.ChecklistItems)
                 .HasForeignKey(e => e.TaskId);
         });
     }

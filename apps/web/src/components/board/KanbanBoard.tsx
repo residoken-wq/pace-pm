@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
-import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2, Diamond } from "lucide-react";
-import { useTasksByStatus, TaskStatus as ApiTaskStatus, TaskPriority as ApiPriority, ProjectTask } from "@/lib/api";
+import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2, Diamond, Check, MapPin, Target, ListTodo, CheckSquare } from "lucide-react";
+import { useTasksByStatus, TaskStatus as ApiTaskStatus, TaskPriority as ApiPriority, TaskType as ApiTaskType, ProjectTask, ChecklistItem, api } from "@/lib/api";
 
 // Column configuration with semantic colors
 const columns = [
@@ -28,6 +28,14 @@ const priorityStyles: Record<ApiPriority, string> = {
     Medium: "priority-medium",
     High: "priority-high",
     Urgent: "priority-urgent",
+};
+
+// Task type config
+const taskTypeConfig: Record<ApiTaskType, { label: string; icon: typeof MapPin; color: string }> = {
+    RoadmapPhase: { label: "Roadmap Phase", icon: MapPin, color: "text-purple-500" },
+    Milestone: { label: "Milestone", icon: Target, color: "text-amber-500" },
+    Task: { label: "Task", icon: ListTodo, color: "text-blue-500" },
+    Subtask: { label: "Subtask", icon: CheckSquare, color: "text-slate-500" },
 };
 
 // ============================================
@@ -158,6 +166,9 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
     const [dueDate, setDueDate] = useState("");
     const [parentId, setParentId] = useState<string>("");
     const [isMilestone, setIsMilestone] = useState(false);
+    const [taskType, setTaskType] = useState<ApiTaskType>("Task");
+    const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+    const [newChecklistItem, setNewChecklistItem] = useState("");
     const [saving, setSaving] = useState(false);
     const [syncing, setSyncing] = useState<"calendar" | "todo" | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -171,6 +182,8 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
             setParentId(task.parentId || "");
             setIsMilestone(task.isMilestone || false);
+            setTaskType(task.type || "Task");
+            setChecklistItems(task.checklistItems || []);
         } else {
             setTitle("");
             setDescription("");
@@ -179,6 +192,8 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
             setDueDate("");
             setParentId("");
             setIsMilestone(false);
+            setTaskType("Task");
+            setChecklistItems([]);
         }
         setShowDeleteConfirm(false);
     }, [task, defaultStatus, isOpen]);
@@ -200,7 +215,8 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
                 status,
                 dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
                 parentId: parentId || undefined, // Ensure empty string becomes undefined
-                isMilestone,
+                isMilestone: taskType === "Milestone",
+                type: taskType,
             });
             onClose();
         } finally {
@@ -376,23 +392,93 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
                                 </div>
                             )}
 
-                            {/* Milestone Toggle */}
-                            <div className="flex items-center gap-2 pb-2">
-                                <label className="text-sm font-medium">Task Type</label>
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        id="isMilestone"
-                                        checked={isMilestone}
-                                        onChange={(e) => setIsMilestone(e.target.checked)}
-                                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                    />
-                                    <label htmlFor="isMilestone" className="text-sm text-foreground flex items-center gap-1 cursor-pointer select-none">
-                                        <Diamond className={`w-4 h-4 ${isMilestone ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                                        Mark as Milestone
-                                    </label>
+                            {/* Task Type Selector */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Task Type</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {(["RoadmapPhase", "Milestone", "Task", "Subtask"] as ApiTaskType[]).map((t) => {
+                                        const config = taskTypeConfig[t];
+                                        const Icon = config.icon;
+                                        return (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => setTaskType(t)}
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskType === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                                            >
+                                                <Icon className={`w-4 h-4 ${taskType === t ? "" : config.color}`} />
+                                                {config.label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
+
+                            {/* Checklist Section (only for edit mode) */}
+                            {task && (
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">
+                                        Checklist ({checklistItems.filter(i => i.isCompleted).length}/{checklistItems.length})
+                                    </label>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {checklistItems.map((item) => (
+                                            <div key={item.id} className="flex items-center gap-2 group">
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        const updated = await api.updateChecklistItem(task.id, item.id, { isCompleted: !item.isCompleted });
+                                                        setChecklistItems(prev => prev.map(i => i.id === item.id ? updated : i));
+                                                    }}
+                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${item.isCompleted ? "bg-primary border-primary text-white" : "border-muted-foreground hover:border-primary"}`}
+                                                >
+                                                    {item.isCompleted && <Check className="w-3 h-3" />}
+                                                </button>
+                                                <span className={`flex-1 text-sm ${item.isCompleted ? "line-through text-muted-foreground" : ""}`}>{item.title}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        await api.deleteChecklistItem(task.id, item.id);
+                                                        setChecklistItems(prev => prev.filter(i => i.id !== item.id));
+                                                    }}
+                                                    className="p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-2 mt-2">
+                                        <Input
+                                            value={newChecklistItem}
+                                            onChange={(e) => setNewChecklistItem(e.target.value)}
+                                            placeholder="Add checklist item..."
+                                            className="h-9 text-sm"
+                                            onKeyDown={async (e) => {
+                                                if (e.key === "Enter" && newChecklistItem.trim()) {
+                                                    e.preventDefault();
+                                                    const item = await api.addChecklistItem(task.id, newChecklistItem.trim());
+                                                    setChecklistItems(prev => [...prev, item]);
+                                                    setNewChecklistItem("");
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={async () => {
+                                                if (newChecklistItem.trim()) {
+                                                    const item = await api.addChecklistItem(task.id, newChecklistItem.trim());
+                                                    setChecklistItems(prev => [...prev, item]);
+                                                    setNewChecklistItem("");
+                                                }
+                                            }}
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Actions */}
                             <div className="flex gap-3 pt-2">
