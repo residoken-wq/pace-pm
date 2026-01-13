@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.env
+.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vercel
+.turbo
+dist
+build
+coverage
+test
+README.md
+Dockerfile
+.dockerignore
