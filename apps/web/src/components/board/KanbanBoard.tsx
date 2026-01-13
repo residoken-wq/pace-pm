@@ -142,6 +142,7 @@ export interface TaskModalProps {
     isOpen: boolean;
     task?: ProjectTask | null;
     defaultStatus?: ApiTaskStatus;
+    potentialParents?: ProjectTask[];
     onClose: () => void;
     onSave: (task: Partial<ProjectTask>) => void;
     onDelete?: (taskId: string) => void;
@@ -149,12 +150,13 @@ export interface TaskModalProps {
     onSyncToTodo?: (taskId: string) => Promise<any>;
 }
 
-export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDelete, onSyncToCalendar, onSyncToTodo }: TaskModalProps) {
+export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], onClose, onSave, onDelete, onSyncToCalendar, onSyncToTodo }: TaskModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<ApiPriority>("Medium");
     const [status, setStatus] = useState<ApiTaskStatus>("Todo");
     const [dueDate, setDueDate] = useState("");
+    const [parentId, setParentId] = useState<string>("");
     const [isMilestone, setIsMilestone] = useState(false);
     const [saving, setSaving] = useState(false);
     const [syncing, setSyncing] = useState<"calendar" | "todo" | null>(null);
@@ -167,6 +169,7 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
             setPriority(task.priority);
             setStatus(task.status);
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
+            setParentId(task.parentId || "");
             setIsMilestone(task.isMilestone || false);
         } else {
             setTitle("");
@@ -174,12 +177,16 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
             setPriority("Medium");
             setStatus(defaultStatus || "Todo");
             setDueDate("");
+            setParentId("");
             setIsMilestone(false);
         }
         setShowDeleteConfirm(false);
     }, [task, defaultStatus, isOpen]);
 
     if (!isOpen) return null;
+
+    // Filter out self and potentially children to prevent simple cycles
+    const validParents = potentialParents.filter(p => !task || p.id !== task.id);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -192,6 +199,7 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
                 priority,
                 status,
                 dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+                parentId: parentId || null, // Ensure empty string becomes null
                 isMilestone,
             });
             onClose();
@@ -217,7 +225,6 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
         try {
             if (type === "calendar" && onSyncToCalendar) await onSyncToCalendar(task.id);
             if (type === "todo" && onSyncToTodo) await onSyncToTodo(task.id);
-            // Could add toast notification here
         } finally {
             setSyncing(null);
         }
@@ -226,9 +233,9 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg border border-border overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg border border-border overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30 flex-shrink-0">
                     <h2 className="text-lg font-semibold">{task ? "Edit Task" : "New Task"}</h2>
                     <div className="flex items-center gap-1">
                         {task && onDelete && (
@@ -242,142 +249,161 @@ export function TaskModal({ isOpen, task, defaultStatus, onClose, onSave, onDele
                     </div>
                 </div>
 
-                {/* Delete Confirmation */}
-                {showDeleteConfirm ? (
-                    <div className="p-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                            <AlertTriangle className="w-6 h-6 text-destructive" />
-                        </div>
-                        <h3 className="text-lg font-semibold mb-2">Delete Task?</h3>
-                        <p className="text-muted-foreground text-sm mb-6">This action cannot be undone.</p>
-                        <div className="flex gap-3">
-                            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="flex-1 h-10" disabled={saving}>Cancel</Button>
-                            <Button variant="destructive" onClick={handleDelete} className="flex-1 h-10" disabled={saving}>
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
-                            </Button>
-                        </div>
-                    </div>
-                ) : (
-                    <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                        {/* Title */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Title <span className="text-destructive">*</span></label>
-                            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title..." className="h-11" required autoFocus />
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Description</label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Task description..."
-                                rows={3}
-                                className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                            />
-                        </div>
-
-                        {/* Status (for edit mode) */}
-                        {task && (
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Status</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {(["Todo", "InProgress", "InReview", "Done"] as ApiTaskStatus[]).map((s) => (
-                                        <button
-                                            key={s}
-                                            type="button"
-                                            onClick={() => setStatus(s)}
-                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${status === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                                        >
-                                            <div className={`w-2 h-2 rounded-full ${statusConfig[s].color}`} />
-                                            {statusConfig[s].label}
-                                        </button>
-                                    ))}
-                                </div>
+                {/* Content */}
+                <div className="overflow-y-auto">
+                    {showDeleteConfirm ? (
+                        <div className="p-6 text-center">
+                            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle className="w-6 h-6 text-destructive" />
                             </div>
-                        )}
-
-                        {/* Priority & Due Date Row */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Priority</label>
-                                <div className="flex gap-1">
-                                    {(["Low", "Medium", "High", "Urgent"] as ApiPriority[]).map((p) => (
-                                        <button
-                                            key={p}
-                                            type="button"
-                                            onClick={() => setPriority(p)}
-                                            className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${priority === p ? priorityStyles[p] + " ring-2 ring-ring ring-offset-1" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-                                        >
-                                            {p}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Due Date</label>
-                                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-10" />
+                            <h3 className="text-lg font-semibold mb-2">Delete Task?</h3>
+                            <p className="text-muted-foreground text-sm mb-6">This action cannot be undone.</p>
+                            <div className="flex gap-3">
+                                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} className="flex-1 h-10" disabled={saving}>Cancel</Button>
+                                <Button variant="destructive" onClick={handleDelete} className="flex-1 h-10" disabled={saving}>
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
+                                </Button>
                             </div>
                         </div>
-
-                        {/* Microsoft 365 Sync */}
-                        {task && (
+                    ) : (
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            {/* Title */}
                             <div>
-                                <label className="block text-sm font-medium mb-2">Microsoft 365 Sync</label>
-                                <div className="flex gap-3">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="flex-1 gap-2"
-                                        onClick={() => handleSync("calendar")}
-                                        disabled={syncing !== null || !dueDate}
-                                        title={!dueDate ? "Set due date to sync" : "Sync to Outlook Calendar"}
-                                    >
-                                        {syncing === "calendar" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-blue-500" />}
-                                        Add to Calendar
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="flex-1 gap-2"
-                                        onClick={() => handleSync("todo")}
-                                        disabled={syncing !== null}
-                                        title="Sync to Microsoft To-Do"
-                                    >
-                                        {syncing === "todo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded border-2 border-primary" />}
-                                        Add to To-Do
-                                    </Button>
-                                </div>
+                                <label className="block text-sm font-medium mb-2">Title <span className="text-destructive">*</span></label>
+                                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title..." className="h-11" required autoFocus />
                             </div>
-                        )}
 
-                        {/* Milestone Toggle */}
-                        <div className="flex items-center gap-2 pb-2">
-                            <label className="text-sm font-medium">Task Type</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="isMilestone"
-                                    checked={isMilestone}
-                                    onChange={(e) => setIsMilestone(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            {/* Description */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Task description..."
+                                    rows={3}
+                                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                                 />
-                                <label htmlFor="isMilestone" className="text-sm text-foreground flex items-center gap-1 cursor-pointer select-none">
-                                    <Diamond className={`w-4 h-4 ${isMilestone ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                                    Mark as Milestone
-                                </label>
                             </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex gap-3 pt-2">
-                            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
-                            <Button type="submit" className="flex-1 h-11" disabled={saving || !title.trim()}>
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : task ? "Save Changes" : "Create Task"}
-                            </Button>
-                        </div>
-                    </form>
-                )}
+                            {/* Status (for edit mode) */}
+                            {task && (
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Status</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(["Todo", "InProgress", "InReview", "Done"] as ApiTaskStatus[]).map((s) => (
+                                            <button
+                                                key={s}
+                                                type="button"
+                                                onClick={() => setStatus(s)}
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${status === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${statusConfig[s].color}`} />
+                                                {statusConfig[s].label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Priority & Due Date Row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Priority</label>
+                                    <div className="flex gap-1">
+                                        {(["Low", "Medium", "High", "Urgent"] as ApiPriority[]).map((p) => (
+                                            <button
+                                                key={p}
+                                                type="button"
+                                                onClick={() => setPriority(p)}
+                                                className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${priority === p ? priorityStyles[p] + " ring-2 ring-ring ring-offset-1" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                                            >
+                                                {p}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Due Date</label>
+                                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-10" />
+                                </div>
+                            </div>
+
+                            {/* Parent Task Selector */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2">Parent Task</label>
+                                <select
+                                    value={parentId}
+                                    onChange={(e) => setParentId(e.target.value)}
+                                    className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                >
+                                    <option value="">(No Parent)</option>
+                                    {validParents.map(t => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Microsoft 365 Sync */}
+                            {task && (
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Microsoft 365 Sync</label>
+                                    <div className="flex gap-3">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="flex-1 gap-2"
+                                            onClick={() => handleSync("calendar")}
+                                            disabled={syncing !== null || !dueDate}
+                                            title={!dueDate ? "Set due date to sync" : "Sync to Outlook Calendar"}
+                                        >
+                                            {syncing === "calendar" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4 text-blue-500" />}
+                                            Add to Calendar
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="flex-1 gap-2"
+                                            onClick={() => handleSync("todo")}
+                                            disabled={syncing !== null}
+                                            title="Sync to Microsoft To-Do"
+                                        >
+                                            {syncing === "todo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded border-2 border-primary" />}
+                                            Add to To-Do
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Milestone Toggle */}
+                            <div className="flex items-center gap-2 pb-2">
+                                <label className="text-sm font-medium">Task Type</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="isMilestone"
+                                        checked={isMilestone}
+                                        onChange={(e) => setIsMilestone(e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                    />
+                                    <label htmlFor="isMilestone" className="text-sm text-foreground flex items-center gap-1 cursor-pointer select-none">
+                                        <Diamond className={`w-4 h-4 ${isMilestone ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                                        Mark as Milestone
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3 pt-2">
+                                <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
+                                <Button type="submit" className="flex-1 h-11" disabled={saving || !title.trim()}>
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : task ? "Save Changes" : "Create Task"}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+                </div>
             </div>
         </div >
     );
@@ -392,7 +418,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
-    const { tasksByStatus, loading, error, createTask, updateTask, updateStatus, deleteTask, syncToCalendar, syncToTodo } = useTasksByStatus(projectId);
+    const { tasks, tasksByStatus, loading, error, createTask, updateTask, updateStatus, deleteTask, syncToCalendar, syncToTodo } = useTasksByStatus(projectId);
 
     const [draggedTask, setDraggedTask] = useState<ProjectTask | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -502,6 +528,7 @@ export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
                 isOpen={modalOpen}
                 task={selectedTask}
                 defaultStatus={defaultStatus}
+                potentialParents={tasks}
                 onClose={() => setModalOpen(false)}
                 onSave={handleSaveTask}
                 onDelete={handleDeleteTask}

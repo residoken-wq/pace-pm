@@ -6,11 +6,9 @@ import { TeamPanel } from "@/components/team";
 import { Button, Card, CardHeader, CardTitle, CardContent, Input } from "@/components/ui";
 import { useProjects, Project, useApiAuth } from "@/lib/api";
 import {
-    Folder,
     Plus,
     LayoutGrid,
     LogOut,
-    ChevronDown,
     Search,
     Bell,
     X,
@@ -22,25 +20,30 @@ import {
     Edit2,
     Trash2,
     AlertTriangle,
-    Users
+    Users,
+    Folder,
+    Menu,
+    ChevronRight,
+    Settings
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { WBSTreeView } from "@/components/board/WBSTreeView";
 import { useTasksByStatus, ProjectTask } from "@/lib/api";
 import { TaskModal } from "@/components/board/KanbanBoard";
+import { ProjectSidebar, SidebarView } from "@/components/layout/ProjectSidebar";
 
 // ============================================
-// WBS Container (to hold state for Tree View)
+// WBS Container
 // ============================================
 function WBSContainer({ projectId, activeProject }: { projectId: string, activeProject: any }) {
-    const { tasksByStatus, loading, createTask, updateTask, deleteTask } = useTasksByStatus(projectId);
+    const { tasks, tasksByStatus, loading, createTask, updateTask, deleteTask } = useTasksByStatus(projectId);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
     const [parentTaskId, setParentTaskId] = useState<string | undefined>(undefined);
 
     // Flatten tasks from status columns to single list for WBS
-    const allTasks = Object.values(tasksByStatus).flat();
+    const allTasks = tasks; // hooks now return flat list too
 
     const handleAddTask = (parentId?: string) => {
         setSelectedTask(null);
@@ -76,6 +79,7 @@ function WBSContainer({ projectId, activeProject }: { projectId: string, activeP
             <TaskModal
                 isOpen={modalOpen}
                 task={selectedTask}
+                potentialParents={allTasks}
                 onClose={() => setModalOpen(false)}
                 onSave={handleSaveTask}
                 onDelete={(id) => deleteTask(id)}
@@ -97,12 +101,7 @@ const projectStatusConfig: Record<string, { label: string; color: string }> = {
 
 // Project dot colors
 const projectDotColors = [
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-violet-500",
-    "bg-amber-500",
-    "bg-rose-500",
-    "bg-cyan-500",
+    "bg-blue-500", "bg-emerald-500", "bg-violet-500", "bg-amber-500", "bg-rose-500", "bg-cyan-500",
 ];
 
 // ============================================
@@ -154,10 +153,7 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div
-                className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md border border-border overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md border border-border overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
                     <h2 className="text-lg font-semibold">{project ? "Edit Project" : "New Project"}</h2>
                     <button onClick={onClose} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
@@ -166,17 +162,8 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Project Name <span className="text-destructive">*</span>
-                        </label>
-                        <Input
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter project name..."
-                            className="h-11"
-                            required
-                            autoFocus
-                        />
+                        <label className="block text-sm font-medium mb-2">Project Name <span className="text-destructive">*</span></label>
+                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter project name..." className="h-11" required autoFocus />
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-2">Description</label>
@@ -197,10 +184,7 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
                                         key={key}
                                         type="button"
                                         onClick={() => setStatus(key as any)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${status === key
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                            }`}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${status === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                                     >
                                         <div className={`w-2 h-2 rounded-full ${color}`} />
                                         {label}
@@ -210,9 +194,7 @@ function ProjectModal({ isOpen, project, onClose, onSave }: ProjectModalProps) {
                         </div>
                     )}
                     <div className="flex gap-3 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
                         <Button type="submit" className="flex-1 h-11" disabled={saving || !name.trim()}>
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : project ? "Save Changes" : "Create Project"}
                         </Button>
@@ -236,26 +218,18 @@ interface DeleteModalProps {
 
 function DeleteModal({ isOpen, projectName, onClose, onConfirm, deleting }: DeleteModalProps) {
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div
-                className="relative bg-card rounded-2xl shadow-2xl w-full max-w-sm border border-border overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-sm border border-border overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6 text-center">
                     <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
                         <AlertTriangle className="w-6 h-6 text-destructive" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Delete Project?</h3>
-                    <p className="text-muted-foreground text-sm mb-6">
-                        Are you sure you want to delete <strong>{projectName}</strong>? This action cannot be undone and all tasks will be deleted.
-                    </p>
+                    <p className="text-muted-foreground text-sm mb-6">Are you sure you want to delete <strong>{projectName}</strong>? This action cannot be undone and all tasks will be deleted.</p>
                     <div className="flex gap-3">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-10" disabled={deleting}>
-                            Cancel
-                        </Button>
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-10" disabled={deleting}>Cancel</Button>
                         <Button type="button" variant="destructive" onClick={onConfirm} className="flex-1 h-10" disabled={deleting}>
                             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
                         </Button>
@@ -267,86 +241,16 @@ function DeleteModal({ isOpen, projectName, onClose, onConfirm, deleting }: Dele
 }
 
 // ============================================
-// Project Context Menu
+// Global Sidebar Item
 // ============================================
-interface ProjectMenuProps {
-    project: Project;
-    onEdit: () => void;
-    onDelete: () => void;
-}
-
-function ProjectMenu({ project, onEdit, onDelete }: ProjectMenuProps) {
-    const [open, setOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    return (
-        <div ref={menuRef} className="relative">
-            <button
-                onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-            >
-                <MoreVertical className="w-4 h-4" />
-            </button>
-            {open && (
-                <div className="absolute right-0 top-full mt-1 w-36 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setOpen(false); onEdit(); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                    >
-                        <Edit2 className="w-4 h-4" /> Edit
-                    </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setOpen(false); onDelete(); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                        <Trash2 className="w-4 h-4" /> Delete
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ============================================
-// Theme Toggle
-// ============================================
-function ThemeToggle() {
-    const [isDark, setIsDark] = useState(false);
-
-    useEffect(() => {
-        const isDarkMode = document.documentElement.classList.contains("dark");
-        setIsDark(isDarkMode);
-    }, []);
-
-    const toggleTheme = () => {
-        const newIsDark = !isDark;
-        setIsDark(newIsDark);
-        if (newIsDark) {
-            document.documentElement.classList.add("dark");
-            localStorage.setItem("theme", "dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-            localStorage.setItem("theme", "light");
-        }
-    };
-
+function GlobalSidebarItem({ icon: Icon, label, active, onClick, title }: any) {
     return (
         <button
-            onClick={toggleTheme}
-            className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            onClick={onClick}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${active ? "bg-primary text-white shadow-soft" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            title={title || label}
         >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <Icon className="w-5 h-5" />
         </button>
     );
 }
@@ -359,7 +263,7 @@ export default function BoardPage() {
     const { projects, loading: projectsLoading, createProject, updateProject, deleteProject } = useProjects(DEFAULT_WORKSPACE_ID);
 
     const [activeProject, setActiveProject] = useState<Project | null>(null);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [projectSidebarOpen, setProjectSidebarOpen] = useState(true);
     const [projectModalOpen, setProjectModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -367,7 +271,11 @@ export default function BoardPage() {
     const [deleting, setDeleting] = useState(false);
     const [taskModalTrigger, setTaskModalTrigger] = useState(0);
     const [teamPanelOpen, setTeamPanelOpen] = useState(false);
-    const [view, setView] = useState<"board" | "wbs">("board");
+
+    // View state
+    const [view, setView] = useState<SidebarView>("work_packages"); // Default to WBS as "Work Packages"
+
+    const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
 
     useEffect(() => {
         if (projects.length > 0 && !activeProject) {
@@ -380,6 +288,7 @@ export default function BoardPage() {
     const handleCreateProject = useCallback(() => {
         setEditingProject(null);
         setProjectModalOpen(true);
+        setIsProjectsMenuOpen(false);
     }, []);
 
     const handleEditProject = useCallback((project: Project) => {
@@ -433,12 +342,7 @@ export default function BoardPage() {
     if (authLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">Loading Nexus...</p>
-                </div>
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
         );
     }
@@ -455,7 +359,6 @@ export default function BoardPage() {
                         <CardTitle className="text-xl">Welcome to Nexus</CardTitle>
                     </CardHeader>
                     <CardContent className="text-center">
-                        <p className="text-muted-foreground mb-6">Sign in to access your projects</p>
                         <Link href="/">
                             <Button className="w-full h-11">Sign In with Microsoft</Button>
                         </Link>
@@ -466,204 +369,158 @@ export default function BoardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex">
-            {/* ===== Sidebar ===== */}
-            <aside className={`${sidebarOpen ? "w-64" : "w-20"} flex-shrink-0 bg-card border-r border-border flex flex-col transition-all duration-300`}>
+        <div className="min-h-screen bg-background flex overflow-hidden">
+            {/* ======================= */}
+            {/* 1. Global Sidebar       */}
+            {/* ======================= */}
+            <aside className="w-16 flex-shrink-0 bg-card border-r border-border flex flex-col items-center py-4 z-20">
                 {/* Logo */}
-                <div className="h-16 flex items-center px-4 border-b border-border">
-                    <Link href="/" className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-soft">
-                            <span className="text-white font-bold text-lg">N</span>
-                        </div>
-                        {sidebarOpen && <span className="font-semibold text-lg">Nexus</span>}
-                    </Link>
+                <div className="mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-brand flex items-center justify-center shadow-soft">
+                        <span className="text-white font-bold text-lg">N</span>
+                    </div>
                 </div>
 
-                {/* Nav */}
-                <nav className="p-3 space-y-1">
-                    <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <Home className="w-5 h-5" />
-                        {sidebarOpen && <span className="text-sm font-medium">Dashboard</span>}
-                    </Link>
-                </nav>
+                {/* Nav Items */}
+                <div className="flex-1 flex flex-col gap-3 w-full px-2">
+                    <GlobalSidebarItem icon={Home} label="Home" onClick={() => { }} />
 
-                {/* Projects */}
-                <div className="flex-1 overflow-y-auto px-3">
-                    {sidebarOpen && (
-                        <div className="flex items-center justify-between mb-2 px-3 pt-2">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Projects</span>
-                            <button onClick={handleCreateProject} className="p-1 rounded text-primary hover:bg-primary/10 transition-colors" title="New Project">
-                                <Plus className="w-4 h-4" />
-                            </button>
-                        </div>
-                    )}
-
-                    {projectsLoading ? (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <div className="space-y-1 pb-3">
-                            {projects.map((project, index) => (
-                                <div key={project.id} className="group relative">
-                                    <button
-                                        onClick={() => setActiveProject(project)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${activeProject?.id === project.id
-                                            ? "bg-primary/10 text-primary font-medium"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                            }`}
-                                    >
-                                        <div className={`w-2 h-2 rounded-full ${projectDotColors[index % projectDotColors.length]}`} />
-                                        {sidebarOpen && (
-                                            <>
-                                                <span className="flex-1 text-left truncate">{project.name}</span>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${projectStatusConfig[project.status]?.color || "bg-gray-400"}`} title={project.status} />
-                                            </>
-                                        )}
-                                    </button>
-                                    {sidebarOpen && (
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <ProjectMenu
-                                                project={project}
-                                                onEdit={() => handleEditProject(project)}
-                                                onDelete={() => handleDeleteClick(project)}
-                                            />
-                                        </div>
-                                    )}
+                    {/* Projects Drawer Trigger */}
+                    <div className="relative group">
+                        <GlobalSidebarItem
+                            icon={Folder}
+                            label="Projects"
+                            active={isProjectsMenuOpen || !!activeProject}
+                            onClick={() => setIsProjectsMenuOpen(!isProjectsMenuOpen)}
+                        />
+                        {/* Projects Popover */}
+                        {isProjectsMenuOpen && (
+                            <div className="absolute left-full top-0 ml-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-left-2">
+                                <div className="flex items-center justify-between mb-2 px-2 pb-2 border-b border-border">
+                                    <span className="font-semibold text-sm">Projects</span>
+                                    <button onClick={handleCreateProject} className="p-1 rounded hover:bg-muted text-primary"><Plus className="w-4 h-4" /></button>
                                 </div>
-                            ))}
-
-                            {projects.length === 0 && sidebarOpen && (
-                                <div className="text-center py-8">
-                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
-                                        <Folder className="w-6 h-6 text-muted-foreground" />
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mb-4">No projects yet</p>
-                                    <Button size="sm" onClick={handleCreateProject}>
-                                        <Plus className="w-4 h-4 mr-1" /> New Project
-                                    </Button>
+                                <div className="max-h-[300px] overflow-y-auto space-y-1">
+                                    {projectsLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : projects.map(p => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => { setActiveProject(p); setIsProjectsMenuOpen(false); }}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-muted transition-colors ${activeProject?.id === p.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"}`}
+                                        >
+                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${projectStatusConfig[p.status]?.color || "bg-gray-400"}`} />
+                                            <span className="truncate">{p.name}</span>
+                                        </button>
+                                    ))}
+                                    {projects.length === 0 && <span className="text-xs text-muted-foreground px-2">No projects</span>}
                                 </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* User */}
-                <div className="p-3 border-t border-border">
-                    <div className="flex items-center gap-3 px-2">
-                        <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                            {account.name?.charAt(0) || "U"}
-                        </div>
-                        {sidebarOpen && (
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{account.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{account.username}</p>
                             </div>
                         )}
-                        <button onClick={logout} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Sign out">
-                            <LogOut className="w-4 h-4" />
-                        </button>
+                    </div>
+
+                    <GlobalSidebarItem icon={Users} label="Team" onClick={() => setTeamPanelOpen(true)} />
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex flex-col gap-3 w-full px-2">
+                    <GlobalSidebarItem icon={Settings} label="Settings" onClick={() => { }} />
+                    <button onClick={logout} className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden border border-border">
+                        {account.name?.charAt(0)}
                     </div>
                 </div>
             </aside>
 
-            {/* ===== Main Content ===== */}
-            <main className="flex-1 flex flex-col overflow-hidden">
+            {/* ======================= */}
+            {/* 2. Project Sidebar      */}
+            {/* ======================= */}
+            {activeProject && (
+                <ProjectSidebar
+                    isOpen={projectSidebarOpen}
+                    projectName={activeProject.name}
+                    activeView={view}
+                    onViewChange={setView}
+                    onToggle={() => setProjectSidebarOpen(!projectSidebarOpen)}
+                />
+            )}
+
+            {/* ======================= */}
+            {/* 3. Main Content         */}
+            {/* ======================= */}
+            <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
+                {/* Expand sidebar button if closed */}
+                {activeProject && !projectSidebarOpen && (
+                    <button
+                        onClick={() => setProjectSidebarOpen(true)}
+                        className="absolute left-2 top-3 z-30 p-2 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground"
+                    >
+                        <Menu className="w-4 h-4" />
+                    </button>
+                )}
+
                 {/* Header */}
-                <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <LayoutGrid className="w-5 h-5" />
-                        </button>
+                <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm">
+                    <div className={`flex items-center gap-3 ${!projectSidebarOpen ? "pl-10" : ""}`}>
                         {activeProject ? (
-                            <div className="flex items-center gap-2">
-                                <div className={`w-2.5 h-2.5 rounded-full ${projectDotColors[projects.indexOf(activeProject) % projectDotColors.length]}`} />
+                            <>
                                 <h1 className="font-semibold text-lg">{activeProject.name}</h1>
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${projectStatusConfig[activeProject.status]?.color} text-white`}>
-                                    {projectStatusConfig[activeProject.status]?.label}
-                                </span>
-                                <button
-                                    onClick={() => handleEditProject(activeProject)}
-                                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-1"
-                                    title="Edit project"
-                                >
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                            </div>
+                                <span className="text-muted-foreground text-sm">/</span>
+                                <span className="font-medium text-sm text-primary capitalize">{view.replace("_", " ")}</span>
+                            </>
                         ) : (
-                            <h1 className="font-semibold text-lg">Select a Project</h1>
+                            <span className="text-muted-foreground">Select a project</span>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Search tasks..."
-                                className="w-56 h-10 pl-9 pr-4 text-sm bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                            />
-                        </div>
-                        <ThemeToggle />
-                        <button
-                            onClick={() => setTeamPanelOpen(true)}
-                            className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                            title="Team"
-                        >
-                            <Users className="w-5 h-5" />
-                        </button>
-                        <button className="relative p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-                        </button>
-                        <Button onClick={handleNewTask} disabled={!activeProject} className="h-10 px-4 ml-1">
-                            <Plus className="w-4 h-4 mr-1.5" />
-                            New Task
+                    <div className="flex items-center gap-3">
+                        <Button size="sm" onClick={handleNewTask} disabled={!activeProject}>
+                            <Plus className="w-4 h-4 mr-2" /> New Task
                         </Button>
+                        <button className="p-2 rounded-lg text-muted-foreground hover:bg-muted relative">
+                            <Bell className="w-5 h-5" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-card" />
+                        </button>
                     </div>
                 </header>
 
-                {/* Tabs */}
-                <div className="h-12 bg-card border-b border-border px-6 flex items-center gap-1">
-                    <button
-                        onClick={() => setView("board")}
-                        className={`h-full px-4 text-sm font-medium transition-colors border-b-2 ${view === "board" ? "text-primary border-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
-                    >
-                        Board
-                    </button>
-                    <button
-                        onClick={() => setView("wbs")}
-                        className={`h-full px-4 text-sm font-medium transition-colors border-b-2 ${view === "wbs" ? "text-primary border-primary" : "text-muted-foreground border-transparent hover:text-foreground"}`}
-                    >
-                        WBS & Milestones
-                    </button>
-                    {/* Placeholder for future views
-                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Timeline</button>
-                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Table</button>
-                    <button className="h-full px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Calendar</button>
-                    */}
-                </div>
-
-                {/* Board Area */}
-                <div className="flex-1 overflow-auto p-6 bg-muted/30">
+                {/* View Content */}
+                <div className="flex-1 overflow-hidden relative flex flex-col">
                     {activeProject ? (
-                        view === "board" ? (
-                            <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
-                        ) : (
-                            // WBS View Logic (Inline to access page state/modals)
-                            <WBSContainer projectId={activeProject.id} activeProject={activeProject} />
-                        )
+                        <>
+                            {view === "overview" && (
+                                <div className="p-8 flex flex-col items-center justify-center h-full text-muted-foreground">
+                                    <LayoutGrid className="w-12 h-12 mb-4 opacity-50" />
+                                    <h3 className="text-lg font-medium">Project Overview</h3>
+                                    <p>Dashboard and summary statistics (Coming Soon)</p>
+                                </div>
+                            )}
+                            {view === "work_packages" && (
+                                <div className="flex-1 overflow-auto bg-muted/20">
+                                    <WBSContainer projectId={activeProject.id} activeProject={activeProject} />
+                                </div>
+                            )}
+                            {view === "boards" && (
+                                <div className="flex-1 overflow-auto p-6 bg-muted/20">
+                                    <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
+                                </div>
+                            )}
+                            {(view === "gantt" || view === "calendars" || view === "team_planners" || view === "meetings" || view === "news" || view === "team" || view === "settings") && (
+                                <div className="p-8 flex flex-col items-center justify-center h-full text-muted-foreground">
+                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4">
+                                        <Settings className="w-6 h-6 opacity-50" />
+                                    </div>
+                                    <h3 className="text-lg font-medium capitalize">{view.replace("_", " ")}</h3>
+                                    <p>This module is under development.</p>
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full">
-                            <div className="w-20 h-20 rounded-2xl bg-card shadow-soft-lg flex items-center justify-center mb-5">
-                                <Folder className="w-10 h-10 text-primary" />
-                            </div>
-                            <h2 className="text-xl font-semibold mb-2">No project selected</h2>
-                            <p className="text-muted-foreground mb-6">Create or select a project to get started</p>
-                            <Button onClick={handleCreateProject} size="lg">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create Project
-                            </Button>
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                            <Folder className="w-16 h-16 mb-4 opacity-20" />
+                            <h2 className="text-xl font-semibold">No Project Selected</h2>
+                            <p className="mt-2 text-center max-w-xs">Select a project from the sidebar or create a new one to get started.</p>
+                            <Button onClick={handleCreateProject} className="mt-6">Create Project</Button>
                         </div>
                     )}
                 </div>
@@ -683,8 +540,6 @@ export default function BoardPage() {
                 onConfirm={handleConfirmDelete}
                 deleting={deleting}
             />
-
-            {/* Team Panel */}
             <TeamPanel
                 workspaceId={DEFAULT_WORKSPACE_ID}
                 isOpen={teamPanelOpen}
