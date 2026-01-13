@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Button, Input } from "@/components/ui";
-import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2, Diamond, Check, MapPin, Target, ListTodo, CheckSquare } from "lucide-react";
+import { Plus, MoreHorizontal, GripVertical, X, Calendar, User, Trash2, AlertTriangle, Loader2, Diamond, Check, MapPin, Target, ListTodo, CheckSquare, Filter } from "lucide-react";
 import { useTasksByStatus, TaskStatus as ApiTaskStatus, TaskPriority as ApiPriority, TaskType as ApiTaskType, ProjectTask, ChecklistItem, api } from "@/lib/api";
 
 // Column configuration with semantic colors
@@ -511,6 +511,18 @@ export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
     const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
     const [defaultStatus, setDefaultStatus] = useState<ApiTaskStatus>("Todo");
 
+    // Filter Filters
+    const [visibleTypes, setVisibleTypes] = useState<Record<ApiTaskType, boolean>>({
+        RoadmapPhase: true,
+        Milestone: true,
+        Task: true,
+        Subtask: true
+    });
+
+    const toggleFilter = (type: ApiTaskType) => {
+        setVisibleTypes(prev => ({ ...prev, [type]: !prev[type] }));
+    };
+
     useEffect(() => {
         if (openModalTrigger && openModalTrigger > 0) {
             setSelectedTask(null);
@@ -590,10 +602,38 @@ export function KanbanBoard({ projectId, openModalTrigger }: KanbanBoardProps) {
 
     return (
         <>
+            {/* Filter Bar */}
+            <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
+                    <Filter className="w-4 h-4" />
+                    <span>Filter by:</span>
+                </div>
+                {(Object.keys(taskTypeConfig) as ApiTaskType[]).map(type => {
+                    const config = taskTypeConfig[type];
+                    const Icon = config.icon;
+                    const isVisible = visibleTypes[type];
+
+                    return (
+                        <button
+                            key={type}
+                            onClick={() => toggleFilter(type)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${isVisible
+                                ? "bg-background border-primary text-foreground shadow-sm ring-1 ring-primary"
+                                : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"}`}
+                        >
+                            <Icon className={`w-3 h-3 ${isVisible ? config.color : "text-muted-foreground"}`} />
+                            {config.label}
+                        </button>
+                    )
+                })}
+            </div>
+
             <div className="overflow-x-auto pb-4">
                 <div className="flex gap-5 min-w-max">
                     {columns.map((column) => {
-                        const columnTasks = tasksByStatus[column.apiStatus as keyof typeof tasksByStatus] || [];
+                        const rawTasks = tasksByStatus[column.apiStatus as keyof typeof tasksByStatus] || [];
+                        const columnTasks = rawTasks.filter(t => visibleTypes[t.type || "Task"]);
+
                         return (
                             <KanbanColumn
                                 key={column.id}

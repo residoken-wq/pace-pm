@@ -128,6 +128,7 @@ using (var scope = app.Services.CreateScope())
         // Manual schema update for Milestones (since we aren't using migrations properly yet)
         try 
         {
+            // 1. Add IsMilestone column
             db.Database.ExecuteSqlRaw(@"
                 DO $$ 
                 BEGIN 
@@ -135,10 +136,35 @@ using (var scope = app.Services.CreateScope())
                         ALTER TABLE ""Tasks"" ADD COLUMN ""IsMilestone"" boolean DEFAULT false; 
                     END IF; 
                 END $$;");
+
+            // 2. Add Type column (TaskType enum: 0=RoadmapPhase, 1=Milestone, 2=Task, 3=Subtask)
+            db.Database.ExecuteSqlRaw(@"
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Tasks' AND column_name = 'Type') THEN 
+                        ALTER TABLE ""Tasks"" ADD COLUMN ""Type"" integer DEFAULT 2; 
+                    END IF; 
+                END $$;");
+
+            // 3. Create ChecklistItems table
+            db.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""ChecklistItems"" (
+                    ""Id"" text NOT NULL,
+                    ""Title"" character varying(500) NOT NULL,
+                    ""IsCompleted"" boolean NOT NULL DEFAULT false,
+                    ""SortOrder"" integer NOT NULL DEFAULT 0,
+                    ""TaskId"" text NOT NULL,
+                    ""CreatedAt"" timestamp with time zone NOT NULL,
+                    CONSTRAINT ""PK_ChecklistItems"" PRIMARY KEY (""Id""),
+                    CONSTRAINT ""FK_ChecklistItems_Tasks_TaskId"" FOREIGN KEY (""TaskId"") REFERENCES ""Tasks"" (""Id"") ON DELETE CASCADE
+                );
+                
+                CREATE INDEX IF NOT EXISTS ""IX_ChecklistItems_TaskId"" ON ""ChecklistItems"" (""TaskId"");
+            ");
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to apply schema update for IsMilestone");
+            logger.LogWarning(ex, "Failed to apply manual schema updates");
         }
 
         logger.LogInformation("Database schema ready.");
