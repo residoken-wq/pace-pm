@@ -21,6 +21,12 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
 
+ARG NEXT_PUBLIC_AZURE_AD_CLIENT_ID
+ARG NEXT_PUBLIC_AZURE_AD_TENANT_ID
+
+ENV NEXT_PUBLIC_AZURE_AD_CLIENT_ID=$NEXT_PUBLIC_AZURE_AD_CLIENT_ID
+ENV NEXT_PUBLIC_AZURE_AD_TENANT_ID=$NEXT_PUBLIC_AZURE_AD_TENANT_ID
+
 RUN npm run build
 
 # Production image, copy all the files and run next
