@@ -17,6 +17,7 @@ services:
       - npm_letsencrypt:/etc/letsencrypt
     networks:
       - nexus-network
+      - proxy_net
     healthcheck:
       test: [ "CMD", "/bin/check-health" ]
       interval: 30s
@@ -146,6 +147,8 @@ networks:
   nexus-network:
     name: nexus-network
     driver: bridge
+  proxy_net:
+    external: true
 
 # ===========================================
 # VOLUMES
