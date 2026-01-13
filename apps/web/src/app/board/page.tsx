@@ -505,7 +505,7 @@ export default function BoardPage() {
                                     <KanbanBoard projectId={activeProject.id} openModalTrigger={taskModalTrigger} />
                                 </div>
                             )}
-                            {(view === "gantt" || view === "calendars" || view === "team_planners" || view === "meetings" || view === "news" || view === "team" || view === "settings") && (
+                            {(view === "activity" || view === "gantt" || view === "calendars" || view === "team_planners" || view === "meetings" || view === "news" || view === "team" || view === "settings") && (
                                 <div className="p-8 flex flex-col items-center justify-center h-full text-muted-foreground">
                                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4">
                                         <Settings className="w-6 h-6 opacity-50" />

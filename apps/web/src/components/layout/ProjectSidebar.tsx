@@ -12,7 +12,7 @@ import {
     MessagesSquare
 } from "lucide-react";
 
-export type SidebarView = "overview" | "work_packages" | "boards" | "gantt" | "calendars" | "team";
+export type SidebarView = "overview" | "activity" | "work_packages" | "boards" | "gantt" | "calendars" | "team_planners" | "meetings" | "news" | "team" | "settings";
 
 interface ProjectSidebarProps {
     isOpen: boolean;
@@ -63,8 +63,8 @@ export function ProjectSidebar({ isOpen, projectName, activeView, onViewChange, 
                             key={item.id}
                             onClick={() => onViewChange(item.id as SidebarView)}
                             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive
-                                    ? "bg-primary/10 text-primary font-medium border-l-4 border-primary"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted border-l-4 border-transparent"
+                                ? "bg-primary/10 text-primary font-medium border-l-4 border-primary"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted border-l-4 border-transparent"
                                 } ${item.className || ""}`}
                         >
                             <Icon className={`w-4 h-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
