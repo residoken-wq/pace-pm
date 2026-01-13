@@ -15,6 +15,7 @@ export function useApiAuth() {
 
 // Projects hook
 export function useProjects(workspaceId: string) {
+    const { isLoading: authLoading, isAuthenticated } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -22,7 +23,7 @@ export function useProjects(workspaceId: string) {
     useApiAuth();
 
     const fetchProjects = useCallback(async () => {
-        if (!workspaceId) return;
+        if (!workspaceId || authLoading) return;
 
         try {
             setLoading(true);
@@ -34,11 +35,16 @@ export function useProjects(workspaceId: string) {
         } finally {
             setLoading(false);
         }
-    }, [workspaceId]);
+    }, [workspaceId, authLoading]);
 
     useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
+        if (!authLoading && isAuthenticated) {
+            fetchProjects();
+        } else if (!authLoading && !isAuthenticated) {
+            // Stop loading if not authenticated
+            setLoading(false);
+        }
+    }, [fetchProjects, authLoading, isAuthenticated]);
 
     const createProject = useCallback(async (project: Partial<Project>) => {
         const created = await api.createProject({ ...project, workspaceId });
@@ -70,6 +76,7 @@ export function useProjects(workspaceId: string) {
 
 // Tasks hook
 export function useTasks(projectId: string) {
+    const { isLoading: authLoading, isAuthenticated } = useAuth();
     const [tasks, setTasks] = useState<ProjectTask[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -77,7 +84,7 @@ export function useTasks(projectId: string) {
     useApiAuth();
 
     const fetchTasks = useCallback(async () => {
-        if (!projectId) return;
+        if (!projectId || authLoading) return;
 
         try {
             setLoading(true);
@@ -89,11 +96,15 @@ export function useTasks(projectId: string) {
         } finally {
             setLoading(false);
         }
-    }, [projectId]);
+    }, [projectId, authLoading]);
 
     useEffect(() => {
-        fetchTasks();
-    }, [fetchTasks]);
+        if (!authLoading && isAuthenticated) {
+            fetchTasks();
+        } else if (!authLoading && !isAuthenticated) {
+            setLoading(false);
+        }
+    }, [fetchTasks, authLoading, isAuthenticated]);
 
     const createTask = useCallback(async (task: Partial<ProjectTask>) => {
         const created = await api.createTask({ ...task, projectId });
@@ -162,6 +173,7 @@ export function useTasksByStatus(projectId: string) {
 
 // Members hook
 export function useMembers(workspaceId: string) {
+    const { isLoading: authLoading, isAuthenticated } = useAuth();
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -169,7 +181,7 @@ export function useMembers(workspaceId: string) {
     useApiAuth();
 
     const fetchMembers = useCallback(async () => {
-        if (!workspaceId) return;
+        if (!workspaceId || authLoading) return;
         try {
             setLoading(true);
             const data = await api.getMembers(workspaceId);
@@ -180,11 +192,15 @@ export function useMembers(workspaceId: string) {
         } finally {
             setLoading(false);
         }
-    }, [workspaceId]);
+    }, [workspaceId, authLoading]);
 
     useEffect(() => {
-        fetchMembers();
-    }, [fetchMembers]);
+        if (!authLoading && isAuthenticated) {
+            fetchMembers();
+        } else if (!authLoading && !isAuthenticated) {
+            setLoading(false);
+        }
+    }, [fetchMembers, authLoading, isAuthenticated]);
 
     const addMember = useCallback(async (data: AddMemberRequest) => {
         const created = await api.addMember(data);
@@ -215,6 +231,7 @@ export function useMembers(workspaceId: string) {
 
 // Workload hook
 export function useWorkload(workspaceId: string) {
+    const { isLoading: authLoading, isAuthenticated } = useAuth();
     const [workload, setWorkload] = useState<Workload[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -222,7 +239,7 @@ export function useWorkload(workspaceId: string) {
     useApiAuth();
 
     const fetchWorkload = useCallback(async () => {
-        if (!workspaceId) return;
+        if (!workspaceId || authLoading) return;
         try {
             setLoading(true);
             const data = await api.getWorkload(workspaceId);
@@ -233,11 +250,15 @@ export function useWorkload(workspaceId: string) {
         } finally {
             setLoading(false);
         }
-    }, [workspaceId]);
+    }, [workspaceId, authLoading]);
 
     useEffect(() => {
-        fetchWorkload();
-    }, [fetchWorkload]);
+        if (!authLoading && isAuthenticated) {
+            fetchWorkload();
+        } else if (!authLoading && !isAuthenticated) {
+            setLoading(false);
+        }
+    }, [fetchWorkload, authLoading, isAuthenticated]);
 
     return {
         workload,
@@ -249,6 +270,7 @@ export function useWorkload(workspaceId: string) {
 
 // Attachments hook
 export function useAttachments(taskId: string) {
+    const { isLoading: authLoading, isAuthenticated } = useAuth();
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -257,7 +279,7 @@ export function useAttachments(taskId: string) {
     useApiAuth();
 
     const fetchAttachments = useCallback(async () => {
-        if (!taskId) return;
+        if (!taskId || authLoading) return;
         try {
             setLoading(true);
             const data = await api.getAttachments(taskId);
@@ -268,11 +290,15 @@ export function useAttachments(taskId: string) {
         } finally {
             setLoading(false);
         }
-    }, [taskId]);
+    }, [taskId, authLoading]);
 
     useEffect(() => {
-        fetchAttachments();
-    }, [fetchAttachments]);
+        if (!authLoading && isAuthenticated) {
+            fetchAttachments();
+        } else if (!authLoading && !isAuthenticated) {
+            setLoading(false);
+        }
+    }, [fetchAttachments, authLoading, isAuthenticated]);
 
     const uploadFile = useCallback(async (file: File) => {
         setUploading(true);
