@@ -199,7 +199,7 @@ export function TaskModal({ isOpen, task, defaultStatus, potentialParents = [], 
                 priority,
                 status,
                 dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-                parentId: parentId || null, // Ensure empty string becomes null
+                parentId: parentId || undefined, // Ensure empty string becomes undefined
                 isMilestone,
             });
             onClose();
