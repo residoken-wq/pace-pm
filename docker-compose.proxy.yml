@@ -1,0 +1,36 @@
+# Docker Compose for shared Nginx Proxy Manager
+# Run separately: docker-compose -f docker-compose.proxy.yml up -d
+# This allows the proxy to persist across project rebuilds
+
+services:
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nexus-proxy
+    restart: unless-stopped
+    ports:
+      # - '80:80' # HTTP - disabled
+      - '443:443' # HTTPS
+      - '81:81' # Admin UI
+    environment:
+      DB_SQLITE_FILE: "/data/database.sqlite"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy_net
+    healthcheck:
+      test: [ "CMD", "/bin/check-health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  proxy_net:
+    name: proxy_net
+    driver: bridge
+
+volumes:
+  npm_data:
+    name: nexus-npm-data
+  npm_letsencrypt:
+    name: nexus-npm-letsencrypt
