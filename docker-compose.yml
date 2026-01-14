@@ -1,7 +1,5 @@
 services:
   # ===========================================
-<<<<<<< HEAD
-=======
   # NGINX PROXY MANAGER - Reverse Proxy + SSL
   # ===========================================
   nginx-proxy-manager:
@@ -27,7 +25,6 @@ services:
       retries: 3
 
   # ===========================================
->>>>>>> e889e5fa9e99dd8eabf251b26d86a9ff6e90d4c6
   # POSTGRESQL - Primary Database
   # ===========================================
   postgres:
